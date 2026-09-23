@@ -1,0 +1,10 @@
+{
+  "sampling_interval_hours": 0.5,
+  "loss_coefficient_per_step": 0.023454936131102482,
+  "heat_coefficient_c_per_kw_step": 0.1261192467154564,
+  "effective_resistance_k_per_kw": 5.377087620725415,
+  "effective_capacitance_kwh_per_k": 3.964501953679391,
+  "effective_time_constant_hours": 21.317474377471175,
+  "nominal_cop": 3.0,
+  "heat_pump_max_electric_kw": 5.0
+}

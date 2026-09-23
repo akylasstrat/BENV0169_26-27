@@ -1,4 +1,4 @@
-# Tutorial 7 data
+# Tutorial 4.1 data
 
 This directory contains compact teaching extracts from two public energy datasets.
 

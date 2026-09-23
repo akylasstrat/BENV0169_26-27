@@ -1,6 +1,6 @@
-# Tutorial 8 data
+# Tutorial 4.2 data
 
-The probabilistic forecasting exercises reuse `data/tutorial_07/gefcom2012_system_load.csv`. This avoids storing a second copy of the same GEFCom2012 extract.
+The probabilistic forecasting exercises reuse `data/tutorial_4_1/gefcom2012_system_load.csv`. This avoids storing a second copy of the same GEFCom2012 extract.
 
 The file contains hourly aggregate load (`load_mw`) and mean measured air temperature (`air_temperature_c`) for 2007. The aggregate load corresponds to GEFCom2012 zone `Z21`. GEFCom2012 supplies temperature history rather than archived weather forecasts, so the tutorial constructs a previous-day temperature persistence forecast.
 

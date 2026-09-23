@@ -1,0 +1,16 @@
+{
+  "resistance_outdoor_fabric_k_per_kw": 6.0,
+  "resistance_air_fabric_k_per_kw": 0.8,
+  "capacitance_air_kwh_per_k": 0.8,
+  "capacitance_fabric_kwh_per_k": 18.0,
+  "ventilation_conductance_kw_per_k": 0.08,
+  "solar_aperture_kw_per_w_m2": 0.01,
+  "gains_to_air_fraction": 0.45,
+  "heating_to_air_fraction": 0.25,
+  "heat_pump_max_electric_kw": 5.0,
+  "nominal_cop": 3.0,
+  "cop_reference_temperature_c": 5.0,
+  "cop_slope_per_k": 0.05,
+  "minimum_cop": 2.0,
+  "maximum_cop": 4.2
+}

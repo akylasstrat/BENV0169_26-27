@@ -12,25 +12,31 @@ conda activate BENV0169
 pip install -r requirements.txt
 ```
 
-## Tutorial 2
+## Tutorial 1.2
 
-- `tutorial_2_time_series_forecasting.ipynb`: student notebook
-- `tutorial_2_time_series_forecasting_solution.ipynb`: solution notebook
+- `tutorial_1_2_time_series_forecasting.ipynb`: student notebook
+- `tutorial_1_2_time_series_forecasting_solution.ipynb`: solution notebook
 
-Run the notebooks from the repository root. Tutorial data and provenance are in `data/tutorial_02`.
+Run the notebooks from the repository root. Tutorial data and provenance are in `data/tutorial_1_2`.
 
 Data source: Hong, T., Pinson, P. and Fan, S. (2014) ‘Global Energy Forecasting Competition 2012’, *International Journal of Forecasting*, 30(2), pp. 357–363. https://doi.org/10.1016/j.ijforecast.2013.07.001
 
-## Tutorial 7
+## Tutorial 4.1
 
-- `tutorial_7_smart_meter_load_forecasting.ipynb`: student notebook
-- `tutorial_7_smart_meter_load_forecasting_solution.ipynb`: solution notebook
+- `tutorial_4_1_smart_meter_load_forecasting.ipynb`: student notebook
+- `tutorial_4_1_smart_meter_load_forecasting_solution.ipynb`: solution notebook
 
-The tutorial introduces smart-meter exploration and simple machine-learning pipelines for day-ahead load forecasting. It uses GEFCom2012 aggregate demand and a Building Data Genome 2 education building. Data and provenance are in `data/tutorial_07`.
+The tutorial introduces smart-meter exploration and simple machine-learning pipelines for day-ahead load forecasting. It uses GEFCom2012 aggregate demand and a Building Data Genome 2 education building. Data and provenance are in `data/tutorial_4_1`.
 
-## Tutorial 8
+## Tutorial 4.2
 
-- `tutorial_8_pv_probabilistic_forecasting.ipynb`: student notebook
-- `tutorial_8_pv_probabilistic_forecasting_solution.ipynb`: solution notebook
+- `tutorial_4_2_pv_probabilistic_forecasting.ipynb`: student notebook
+- `tutorial_4_2_pv_probabilistic_forecasting_solution.ipynb`: solution notebook
 
-The tutorial introduces residual prediction intervals, linear quantile regression and Gaussian trajectory scenarios. It reuses the GEFCom2012 data from Tutorial 7. The PV section will be completed after a suitable dataset is selected.
+The tutorial introduces residual prediction intervals, linear quantile regression and Gaussian trajectory scenarios. It reuses the GEFCom2012 data from Tutorial 4.1. The PV section will be completed after a suitable dataset is selected.
+
+## Building control tutorials
+
+Tutorials 6.1 to 8.2 cover thermal simulation, RC model identification, optimisation, flexible assets, model predictive control and controller evaluation. Each tutorial has a student notebook and a matching `_solution` notebook.
+
+The shared data are in `data/reference_building`, and the replaceable reference plant is in `course_utils`. Tutorial 6.2 also includes an optional occupied-house measurement exercise using the data in `data/tutorial_6_2`. Optional instructor material is in `instructor`.
