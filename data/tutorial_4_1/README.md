@@ -6,9 +6,9 @@ This directory contains compact teaching extracts from two public energy dataset
 
 - Hourly observations for 2007.
 - `load_mw` is GEFCom2012 zone `Z21`, the aggregate of zones `Z1` to `Z20`.
-- `air_temperature_c` is the mean of the historical measurements from the 11 supplied weather stations, converted from °F to °C. GEFCom2012 calls the source table `Temperature_history`; it does not contain archived weather forecasts.
+- `air_temperature_c` is the mean of the historical weather forecasts from the 11 supplied weather stations, converted from °F to °C. GEFCom2012 calls the training table `Temperature_history`; here, `history` identifies the historical training dataset rather than realised weather measurements.
 - The extract is used to compare seasonal-naïve, linear and tree-based day-ahead forecasts.
-- The tutorial constructs a day-ahead temperature persistence forecast from the previous day's same-hour measurement. Realised target-day temperature is not used as a predictor.
+- For consistency with the building exercise, Tutorial 4.1 uses the previous day's same-hour weather-forecast value rather than the supplied target-hour GEFCom forecast. Tutorial 4.2 uses the target-hour weather forecast directly.
 
 Source: Hong, T., Pinson, P. and Fan, S. (2014) ‘Global Energy Forecasting Competition 2012’, *International Journal of Forecasting*, 30(2), pp. 357–363. https://doi.org/10.1016/j.ijforecast.2013.07.001
 
