@@ -33,7 +33,7 @@ The tutorial introduces smart-meter exploration and simple machine-learning pipe
 - `tutorial_4_2_pv_probabilistic_forecasting.ipynb`: student notebook
 - `tutorial_4_2_pv_probabilistic_forecasting_solution.ipynb`: solution notebook
 
-The tutorial introduces residual prediction intervals, linear quantile regression and Gaussian trajectory scenarios. It reuses the GEFCom2012 data from Tutorial 4.1. The PV section will be completed after a suitable dataset is selected.
+The tutorial introduces residual prediction intervals, linear quantile regression and Gaussian trajectory scenarios using GEFCom2012 load, then transfers the point and probabilistic methods to a physically constrained GEFCom2014 solar example.
 
 ## Building control tutorials
 
