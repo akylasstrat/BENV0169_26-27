@@ -41,6 +41,18 @@ This file is reused without modifying its values from:
 
 The BENV0092 course repository is available at https://github.com/akylasstrat/BENV0092.
 
-Original source:
+## Optional 10-minute indoor-temperature data
+
+`indoor_temperature_10min.csv` supports the optional exponential-smoothing exercise. It contains 720 consecutive 10-minute timestamps from 11 November 2016 00:00 to 15 November 2016 23:50 and one variable:
+
+- `indoor_temperature_c`: average measured indoor air temperature in degrees Celsius.
+
+The extract retains one explicit missing measurement so that the notebook documents and applies a short time-based interpolation before forecasting. Its timestamp index is otherwise complete and contains no duplicates.
+
+The file is a teaching extract of `data/tutorial_6_2/10mins_solpap_2016.csv`, derived from:
+
+Hollick, F. and Wingfield, J. (2018), *Two periods of in-situ measurements from an occupied, semi-detached house in the UK*. https://doi.org/10.14324/000.ds.10087216
+
+## Original GEFCom2012 source
 
 Hong, T., Pinson, P. and Fan, S. (2014) ‘Global Energy Forecasting Competition 2012’, *International Journal of Forecasting*, 30(2), pp. 357–363. https://doi.org/10.1016/j.ijforecast.2013.07.001

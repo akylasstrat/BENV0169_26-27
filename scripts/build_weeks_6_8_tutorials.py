@@ -192,7 +192,7 @@ print(f"Next temperature: {example_next_temperature:.3f} °C")
                 """
 ## 3. Task 2 — free rollout
 
-A **free rollout** starts from one observed initial temperature and then feeds each model prediction into the next update. No later indoor-temperature measurements are used to reset the model. This is also called a recursive multi-step simulation.
+A **free rollout** starts from one observed initial temperature and then feeds each model prediction into the next update. No later indoor-temperature measurements are used to reset the model. This is also called a **recursive multi-step** simulation.
 
 Use your one-step update repeatedly over the two-day input series. Start from the same indoor temperature in both cases and compare (i) no heating with (ii) a prescribed morning and evening heating schedule under the same outdoor-temperature conditions. Each predicted indoor temperature becomes the initial condition for the next interval; the model is not reset from measurements.
 
@@ -677,6 +677,8 @@ print(f"tau = {estimated_tau:.1f} h")
 ## 6. Task 4 — one-step and rollout validation
 
 A one-step prediction uses the measured $T_k$ as the starting point for every transition. A **free rollout** starts from one measured temperature and then uses each predicted temperature as the starting point for the next transition. It receives no later indoor-temperature measurements, so small model errors can accumulate over the validation period.
+
+This is the same information distinction introduced for persistence forecasting in Tutorial 1.2. The one-step calculation is repeatedly reset from observations, whereas the recursive multi-step calculation must propagate its own state. In building modelling, we use the term *free rollout* for the latter experiment.
 """
             ),
             code(rollout),
@@ -854,8 +856,86 @@ print(f"Effective time constant: {house_effective_tau:.1f} h")
 """
             ),
             md(
+                r"""
+### Extension Task E3 — sensitivity to the calibration period
+
+The building fabric has not changed between these short periods, but the fitted parameters can still change. Identification only sees the operating conditions present in the selected sample. Heating use, solar gains, indoor–outdoor temperature differences, occupancy and unmeasured gains differ between days and seasons, while `P_tot (W)` is only a proxy for useful heating.
+
+Refit the same model, with the same bounds, using:
+
+- the complete November period;
+- the first 48 hours of November;
+- the final 48 hours of November; and
+- the complete June period.
+
+Compare the recovered effective $R$, $C$ and $\tau$. Large differences do not mean that the physical wall properties changed over a few days. They show that a low-order grey-box model and imperfect inputs can produce calibration-period-dependent *effective* parameters. This is why the calibration window must be documented and should contain informative operating variation.
+"""
+            ),
+            code(
                 """
-### Extension Task E3 — test without refitting
+def summarise_house_parameters(measurement_table):
+    loss, power, solar = fit_house_measurement_model(measurement_table)
+    step_hours = 1 / 6
+    return {
+        "Rows": len(measurement_table),
+        "Loss coefficient": loss,
+        "Power-proxy coefficient": power,
+        "Solar coefficient": solar,
+        "Effective R [K/kW]": power / loss,
+        "Effective C [kWh/K]": step_hours / power,
+        "Effective tau [h]": step_hours / loss,
+    }
+
+
+samples_per_two_days = 2 * 24 * 6
+house_calibration_periods = {
+    "November — complete period": winter_measurements,
+    "November — first 48 h": winter_measurements.iloc[:samples_per_two_days],
+    "November — final 48 h": winter_measurements.iloc[-samples_per_two_days:],
+    "June — complete period": summer_measurements,
+}
+
+period_parameter_table = pd.DataFrame(
+    {
+        period_name: summarise_house_parameters(period_table)
+        for period_name, period_table in house_calibration_periods.items()
+    }
+).T
+display(period_parameter_table.round(4))
+
+parameter_panels = [
+    ("Effective R [K/kW]", "Effective resistance [K/kW]"),
+    ("Effective C [kWh/K]", "Effective capacitance [kWh/K]"),
+    ("Effective tau [h]", "Time constant [h]"),
+]
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+for ax, (column, ylabel) in zip(axes, parameter_panels):
+    period_parameter_table[column].plot.bar(ax=ax, color="tab:blue")
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel("")
+    ax.tick_params(axis="x", rotation=35)
+    ax.set_title(column.replace("Effective ", ""))
+plt.suptitle("Recovered parameters depend on the calibration period", y=1.03)
+plt.tight_layout()
+plt.show()
+"""
+            ),
+            md(
+                choose(
+                    solution,
+                    r"""
+**Interpretation.** The first and final 48-hour November windows recover noticeably different effective parameters: approximately $R=9.00$ versus $2.88$ K/kW and $C=23.9$ versus $75.5$ kWh/K. Refitting on June gives approximately $R=1.46$ K/kW and $C=106.9$ kWh/K. Within November, the fitted loss coefficient is comparatively stable, so $\tau$ stays near 208–217 hours even while the power-proxy coefficient changes substantially; the June fit also changes the loss coefficient and gives $\tau\approx156$ hours.
+
+These results do not demonstrate seasonal changes in the building fabric. They demonstrate limited identifiability: the electricity-and-gas proxy is not useful heating, the periods excite the model differently, and the $1R1C$ structure absorbs omitted gains and dynamics into its effective coefficients.
+""",
+                    r"""
+Inspect the table and plots. Which period gives the largest and smallest effective $R$ and $C$? Do not interpret the differences as rapid changes in the building fabric: consider input quality, operating conditions and omitted dynamics.
+""",
+                )
+            ),
+            md(
+                """
+### Extension Task E4 — test without refitting
 
 Compare one-step prediction and a free rollout on both periods. The 2017 period is a demanding test because it has warmer weather and much less gas use than the calibration period.
 """
@@ -899,13 +979,15 @@ plt.show()
 """
             ),
             md(
-                """
+                r"""
 ### Extension questions
 
-1. Why can the one-step RMSE remain small while the free rollout drifts substantially?
-2. How do the June 2017 operating conditions differ from the November 2016 calibration period?
-3. Why should coefficients based on `P_tot (W)` be treated as effective rather than physical parameters?
-4. Which additional measurements would make the identification problem more physically interpretable?
+1. Which calibration period produces the largest changes in effective $R$, $C$ and $\tau$?
+2. Why can the recovered parameters change even though the building fabric is unchanged?
+3. Why can the one-step RMSE remain small while the free rollout drifts substantially?
+4. How do the June 2017 operating conditions differ from the November 2016 calibration period?
+5. Why should coefficients based on `P_tot (W)` be treated as effective rather than physical parameters?
+6. Which additional measurements would make the identification problem more physically interpretable?
 """
             ),
             md(

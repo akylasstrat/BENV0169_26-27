@@ -10,5 +10,3 @@ Each file contains 720 observations at 10-minute resolution. The extension uses 
 `P_tot (W)` combines measured electricity and gas power. It is used as a proxy for heat entering the building and is not a direct measurement of useful space-heating output. Parameters identified from this proxy should therefore be interpreted as effective model parameters.
 
 Source: Hollick, F. and Wingfield, J. (2018), *Two periods of in-situ measurements from an occupied, semi-detached house in the UK*. https://doi.org/10.14324/000.ds.10087216
-
-These copies were taken from the BENV0092 teaching repository. The BENV0092 repository itself has not been modified.
