@@ -15,7 +15,7 @@ Run the notebook from the repository root so that its relative data and image pa
 
 ## Set-up
 
-The environment follows BENV0092 and uses Python 3.10.15.
+The environment uses Python 3.10.15.
 
 ```bash
 conda create -n BENV0169 python=3.10.15 ipython
