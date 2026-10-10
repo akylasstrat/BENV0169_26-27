@@ -2,15 +2,16 @@
 
 Student tutorial material for BENV0169: Data Analytics for Sustainable Buildings, 2026/27.
 
-## Available tutorial
+## Tutorial 1.2
 
-### Tutorial 1.2 — Time-series forecasting
+The tutorial is split into two self-contained parts:
 
-Open `tutorial_1_2_time_series_forecasting.ipynb` to work through data-quality checks, imputation and benchmark load forecasting. The solution notebook will be released after the tutorial.
+- [Data quality and imputation](tutorial_1_2_time_series_forecasting.ipynb): inspect missing data and compare imputation methods (about 45 minutes).
+- [Introduction to day-ahead load forecasting](tutorial_1_2_forecast_intro.ipynb): construct naïve, seasonal-naïve and linear-regression forecasts, then evaluate and plot their errors (about 85 minutes).
+
+Notebooks ending in `_solution` contain worked solutions and will be released after the tutorial.
 
 Run the notebook from the repository root so that its relative data and image paths resolve correctly. The required data and provenance information are in `data/tutorial_1_2`. Other data directories support tutorials that will be released later and can be ignored for now.
-
-Allow approximately 90 minutes to complete the main tutorial. The final exponential-smoothing exercise is optional.
 
 ## Set-up
 

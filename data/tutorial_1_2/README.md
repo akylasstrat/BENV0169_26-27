@@ -31,7 +31,7 @@ Known missing timestamp blocks:
 | 2006-08-02 00:00 | 2006-08-08 23:00 | 168 hours |
 | 2006-11-22 00:00 | 2006-11-28 23:00 | 168 hours |
 
-The notebook uses these gaps to illustrate time-index checks. It does not score imputation methods on them because their true values are unavailable. The 2007 portion is complete and supplies the artificial-gap and forecasting exercises.
+The data-quality notebook uses these gaps to illustrate time-index checks. It does not score imputation methods on them because their true values are unavailable. The 2007 portion is complete and supplies the artificial-gap experiment and the separate day-ahead forecasting tutorial.
 
 ## Provenance
 
@@ -41,13 +41,13 @@ This file is reused without modifying its values from:
 
 The BENV0092 course repository is available at https://github.com/akylasstrat/BENV0092.
 
-## Optional 10-minute indoor-temperature data
+## Supplementary 10-minute indoor-temperature data
 
-`indoor_temperature_10min.csv` supports the optional exponential-smoothing exercise. It contains 720 consecutive 10-minute timestamps from 11 November 2016 00:00 to 15 November 2016 23:50 and one variable:
+`indoor_temperature_10min.csv` is retained as supplementary teaching data; it is not required by either part of Tutorial 1.2. It contains 720 consecutive 10-minute timestamps from 11 November 2016 00:00 to 15 November 2016 23:50 and one variable:
 
 - `indoor_temperature_c`: average measured indoor air temperature in degrees Celsius.
 
-The extract retains one explicit missing measurement so that the notebook documents and applies a short time-based interpolation before forecasting. Its timestamp index is otherwise complete and contains no duplicates.
+The extract retains one explicit missing measurement. Its timestamp index is otherwise complete and contains no duplicates.
 
 The file is a teaching extract of `data/tutorial_6_2/10mins_solpap_2016.csv`, derived from:
 
