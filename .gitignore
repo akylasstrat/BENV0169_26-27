@@ -28,3 +28,35 @@ env/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local runtime and scratch files
+/.jupyter_runtime/
+/tmp/
+
+# Reproducible lecture plots and teaching outputs
+/figures/
+/teaching/*_outputs/
+/teaching/*_checkpoints/
+/teaching/*_archive/
+/teaching/*_contact_sheet.*
+/teaching/*_figure_manifest.csv
+/teaching/*_task_manifest.csv
+/teaching/*_schedule.csv
+/teaching/*_supplemental_placements.csv
+/teaching/*_protected_hashes.json
+/teaching/*_preflight_hashes.json
+/teaching/*_validation_results.json
+/teaching/*_validation_summary.json
+
+# Derived forecasts and scores; retain source data and rebuilding code
+/data/week4_day2/*.csv
+/data/week4_day2/run_metadata.json
+/data/week4_day2/validation_summary.json
+/data/week4_day1/day2_handover/*.csv
+/data/week4_day1/day2_handover/metadata.json
+
+# Unused historical extract and image drafts
+/data/week4_day1/robin/robin_education_cecilia.csv
+/images/tutorial_1_2/Forecasting Methods_ Persistence vs Seasonal Naïve*.png
+/images/tutorial_1_2/seasonal_naive.png
+/images/tutorial_1_2/test*.png
