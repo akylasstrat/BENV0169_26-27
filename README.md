@@ -26,6 +26,13 @@ Both notebooks are self-contained and use the existing environment. Worked noteb
 
 [Data/method notes](data/week4_day2/README.md) and [instructor notes](teaching/week4_day2_instructor_notes.md) accompany the lesson.
 
+## Week 6
+
+- [Tutorial 6.1: Control-oriented building modelling and simulation](tutorial_6_1_control_oriented_building_model.ipynb): explore thermal dynamics and compare a compact building model with a reference plant.
+- [Tutorial 6.2: RC model identification and validation](tutorial_6_2_rc_model_identification.ipynb): fit and validate a thermal model using synthetic and measured data.
+
+Run both notebooks from the repository root. The required inputs are in `data/reference_building` and `data/tutorial_6_2`; the worked solutions are released separately.
+
 ## Generated files
 
 Saved lecture plots, forecast tables, checkpoints, manifests, validation reports and teaching archives are local artifacts excluded from Git. Required input datasets, provenance, notebook illustrations and source scripts are versioned. Running a notebook may regenerate outputs; set `EXPORT_ARTEFACTS = False` where available to display results without exporting them.
