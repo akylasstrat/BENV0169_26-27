@@ -7,7 +7,7 @@ import json
 import math
 import subprocess
 import sys
-import tempfile
+import uuid
 import nbformat
 from nbclient import NotebookClient
 from jupyter_client import KernelManager
@@ -257,10 +257,85 @@ np.testing.assert_allclose(rebuilt_bill,flat_solution['bill_gbp'],rtol=0,atol=FE
 assert all(np.max(np.abs(c.violation()))<=FEASIBILITY_TOL for c in rebuilt_constraints)
 for _frame in [hard_summary,tariff_summary,peak_summary]:
     assert set(SUMMARY_COLUMNS)<=set(_frame.columns)
+assert policy_metrics_table.shape==(len(SUMMARY_COLUMNS),4)
+assert policy_metrics_table.columns.tolist()==['Metric','ToU optimum','Flat optimum','Thermostat']
+assert policy_metrics_table.Metric.tolist()==['Bill at ToU prices (£)',*SUMMARY_LABELS[1:]]
+assert policy_comparison.shape==(3,11)
+assert policy_comparison.evaluation_tariff.eq('ToU').all()
+for _tariff,_label in [('Flat','Flat optimum'),('ToU','ToU optimum')]:
+    _tariff_expected_metrics=tariff_summary.set_index('optimisation_tariff').loc[_tariff,SUMMARY_COLUMNS].to_numpy(dtype=float)
+    np.testing.assert_array_equal(policy_metrics_table[_label].to_numpy()[1:],_tariff_expected_metrics[1:])
+    np.testing.assert_allclose(policy_metrics_table[_label].iloc[0],cross_costs.loc[_tariff,'ToU'],rtol=0,atol=1e-12)
 for _case in _successes:
     _summary=schedule_metrics(_case)
     np.testing.assert_allclose(_summary['mean_temperature_c'],_case['temperature_c'][1:].mean(),atol=1e-12)
     np.testing.assert_allclose(_summary['peak_interval_energy_kwh'],_case['power_kw'].max()*dt,atol=1e-12)
+
+# Isolate the supplied thermostat: only NumPy is available, with no price or solver.
+import ast as _ast
+import math as _math
+_helper_cell=next(c for c in _student.cells if c.id=='w71-thermostat-helper')
+_function=_ast.parse(_helper_cell.source).body[0]
+_isolated={'np':np}
+exec(compile(_ast.Module(body=[_function],type_ignores=[]),'private_thermostat','exec'),_isolated)
+_controller=_isolated['run_thermostat']
+assert not any('price' in name for name in _controller.__code__.co_names)
+_test_weather=np.array([19.,18.,20.]);_test_lower=np.full(3,18.);_test_upper=np.full(3,22.)
+_p,_t=_controller(_test_weather,_test_lower,_test_upper,19.,1.,1.,1.,2.)
+np.testing.assert_array_equal(_p,[2.,0.,2.])
+np.testing.assert_array_equal(_t,[19.,21.,18.,22.])
+for _initial,_expected_action in [(19.,2.),(20.,0.),(21.,0.)]:
+    _p0,_t0=_controller(np.array([20.]),np.array([18.]),np.array([22.]),_initial,1.,1.,1.,2.)
+    assert _p0[0]==_expected_action and _t0[0]==_initial
+assert not any(np.shares_memory(_p,x) or np.shares_memory(_t,x) for x in [_test_weather,_test_lower,_test_upper])
+_p[:]=-99.;_t[:]=-99.
+_again_p,_again_t=_controller(_test_weather,_test_lower,_test_upper,19.,1.,1.,1.,2.)
+np.testing.assert_array_equal(_again_p,[2.,0.,2.])
+np.testing.assert_array_equal(_again_t,[19.,21.,18.,22.])
+
+# Repricing can change the bill but cannot change the policy or its physical inputs.
+_original_parameter=price.value.copy()
+for _test_prices in [np.zeros(N),np.full(N,123.),dynamic_prices[::-1]]:
+    price.value=_test_prices.copy()
+    _isolated['dynamic_prices']=_test_prices
+    _pp,_tt=_controller(outdoor,lower,upper,TRUE_T0,b,c,COP,P_MAX)
+    np.testing.assert_array_equal(_pp,thermostat_power)
+    np.testing.assert_array_equal(_tt,thermostat_temperature)
+price.value=_original_parameter
+assert thermostat_power.shape==(N,) and thermostat_temperature.shape==(N+1,)
+assert np.isfinite(np.r_[thermostat_power,thermostat_temperature]).all()
+assert thermostat_temperature[0]==TRUE_T0==20.
+np.testing.assert_array_equal(thermostat_reference,(lower+upper)/2)
+np.testing.assert_array_equal(thermostat_power,np.where(thermostat_temperature[:-1]<thermostat_reference,P_MAX,0.))
+assert np.isin(thermostat_power,[0.,P_MAX]).all()
+_oracle=[TRUE_T0]
+for _k,_power in enumerate(thermostat_power):
+    _oracle.append(_oracle[-1]+b*(outdoor[_k]-_oracle[-1])+c*COP*_power)
+np.testing.assert_allclose(thermostat_temperature,_oracle,rtol=0,atol=1e-12)
+np.testing.assert_array_equal(thermostat_policies['ToU-optimised schedule'][0],hard_power)
+np.testing.assert_array_equal(thermostat_policies['ToU-optimised schedule'][1],hard_temperature)
+np.testing.assert_array_equal(hard_solution['prices'],dynamic_prices)
+assert thermostat_comparison.policy.tolist()==['Thermostat','ToU-optimised schedule']
+for _name,(_p,_t) in thermostat_policies.items():
+    _row=thermostat_comparison.set_index('policy').loc[_name]
+    _independent=[dt*_math.fsum(float(v)*float(w) for v,w in zip(dynamic_prices,_p)),
+        dt*_math.fsum(map(float,_p)),max(_p),_math.fsum(map(float,_t[1:]))/N,
+        dt*_math.fsum(max(float(L)-float(T),0.) for L,T in zip(lower,_t[1:])),
+        dt*_math.fsum(max(float(T)-float(U),0.) for U,T in zip(upper,_t[1:]))]
+    np.testing.assert_allclose(_row.to_numpy(dtype=float),_independent,rtol=0,atol=1e-12)
+# Comfort deviations are outcomes. No cost-superiority or hard-comfort test for the thermostat.
+for _policy_name,(_policy_p,_policy_t) in comparison_policies.items():
+    _policy_endpoints=_policy_t[1:]
+    _policy_oracle=[dt*_math.fsum(float(v)*float(w) for v,w in zip(dynamic_prices,_policy_p)),
+        dt*_math.fsum(map(float,_policy_p)),_math.fsum(map(float,_policy_endpoints))/N,
+        max(_policy_p),dt*max(_policy_p),
+        dt*sum(float(L)-float(T)>COMFORT_COUNT_TOL for L,T in zip(lower,_policy_endpoints)),
+        dt*sum(float(T)-float(U)>COMFORT_COUNT_TOL for U,T in zip(upper,_policy_endpoints)),
+        dt*_math.fsum(max(float(L)-float(T),0.) for L,T in zip(lower,_policy_endpoints)),
+        dt*_math.fsum(max(float(T)-float(U),0.) for U,T in zip(upper,_policy_endpoints))]
+    np.testing.assert_allclose(policy_metrics_table[_policy_name].to_numpy(),_policy_oracle,rtol=0,atol=1e-12)
+    np.testing.assert_array_equal(policy_metrics_table[_policy_name].to_numpy(),
+        policy_comparison.set_index('policy').loc[_policy_name,SUMMARY_COLUMNS].to_numpy(dtype=float))
 
 validation_payload={'status':'PASS','python':_sys.version,'executable':_sys.executable,
     'packages':{p:_metadata.version(p) for p in ['numpy','pandas','cvxpy','clarabel','scipy','matplotlib','nbformat','nbclient','ipykernel']},
@@ -274,6 +349,9 @@ validation_payload={'status':'PASS','python':_sys.version,'executable':_sys.exec
     'tariff_cross_costs':cross_costs.to_dict(),'tariff_energy':tariff_energy.to_dict(orient='records'),
     'scheduling_value_tou_gbp':scheduling_value_tou,'peak_metrics':peak_metrics.to_dict(orient='records'),
     'initial_error_metrics':error_table.to_dict(orient='records'),
+    'thermostat_metrics':thermostat_comparison.to_dict(orient='records'),
+    'policy_comparison_metrics':policy_comparison.to_dict(orient='records'),
+    'thermostat_checks':'PASS: independent threshold/equality fixtures; copies; price invariance; N/N+1; recurrence; capacity; independent six metrics; original checked ToU arrays',
     'matched_max_difference_c':float(matched_table.max_replay_difference_c.max()),
     'fixture_status':fixture_record['status'],'forced_solver_exception':'PASS: no stale arrays',
     'failed_experiment_cases':[{'status':r['status'],'reason':r.get('reason','')} for r in _all if not r['success']],
@@ -315,19 +393,48 @@ def static_checks():
     for answer in ['(0,3)','(0, 3)','best_objective=-6','best_xy=np.array([0','(4,2)','bill_gbp']:
         assert answer not in early
     all_text='\n'.join(c.source for c in pair[0].cells)
-    for stale in ['C:/','C:\\','two-interval allocation','slide 33','slide 12; 12 min','64 minutes','slides 25–27']:
+    for stale in ['C:/','C:\\','two-interval allocation','slide 12; 12 min','64 minutes','slides 25–27']:
         assert stale not in all_text,stale
     assert 'course_utils.control' not in all_text and 'course_utils.mpc' not in all_text
-    assert [row[1] for row in TASKS]==[11,21,24,28,36,40]
-    assert sum(row[2] for row in TASKS)==62
-    assert len(SLIDE_MINUTES)==42 and sum(SLIDE_MINUTES)==200
-    assert [sum(SLIDE_MINUTES[a:b]) for a,b in [(0,11),(11,21),(21,31),(31,42)]]==[50]*4
+    assert [row[1] for row in TASKS]==[11,21,24,29,38,42]
+    assert [row[2] for row in TASKS]==[15,8,9,12,12,7]
+    assert sum(row[2] for row in TASKS)==63
+    assert len(SLIDE_MINUTES)==44 and sum(SLIDE_MINUTES)==200
+    assert [sum(SLIDE_MINUTES[a:b]) for a,b in [(0,11),(11,21),(21,33),(33,44)]]==[50]*4
     assert all(SLIDE_MINUTES[slide-1]==minutes for _,slide,minutes in TASKS)
+    assert ids.index('w71-thermostat-helper')<ids.index('w71-task-d-text')
+    assert ids.index('w71-task-d')<ids.index('w71-thermostat-comparison')<ids.index('w71-task-e-text')
     return pair
 
 
 def execute(nb,kernel_root,result_path):
     executed=copy.deepcopy(nb)
+    comparison_index=next(i for i,c in enumerate(executed.cells) if c.id=='w71-thermostat-comparison')
+    executed.cells.insert(comparison_index+1,nbformat.v4.new_code_cell(r'''
+assert len(axes)==3
+for _ax in axes:
+    np.testing.assert_allclose(_ax.get_xlim(),mdates.date2num([state_time[0],state_time[-1]]),atol=1e-10)
+for _patch,_expected in zip(axes[1].patches,[thermostat_power,hard_solution['power_kw']]):
+    _stairs=_patch.get_data()
+    assert len(_stairs.values)==48 and len(_stairs.edges)==49
+    np.testing.assert_array_equal(_stairs.values,_expected)
+    np.testing.assert_allclose(_stairs.edges,mdates.date2num(state_time),atol=1e-10)
+assert len(axes[1].patches)==2
+for _line,_expected in zip(axes[2].lines,[thermostat_temperature,hard_solution['temperature_c']]):
+    assert len(_line.get_xdata())==49
+    np.testing.assert_array_equal(_line.get_ydata(),_expected)
+# Regression: comfort bounds belong to T[k+1], not the interval start T[k].
+_endpoint_dates=mdates.date2num(state_time[1:])
+for _line,_expected in zip(axes[2].lines[2:],[lower,upper]):
+    np.testing.assert_allclose(mdates.date2num(_line.get_xdata()),_endpoint_dates,rtol=0,atol=1e-10)
+    np.testing.assert_array_equal(_line.get_ydata(),_expected)
+assert len(axes[2].lines)==4
+_band_vertices=axes[2].collections[0].get_paths()[0].vertices
+np.testing.assert_allclose(np.unique(_band_vertices[:,0]),_endpoint_dates,rtol=0,atol=1e-10)
+for _x,_lower,_upper in zip(_endpoint_dates,lower,upper):
+    _ys=_band_vertices[_band_vertices[:,0]==_x,1]
+    np.testing.assert_allclose([_ys.min(),_ys.max()],[_lower,_upper],rtol=0,atol=1e-12)
+''',id='private-thermostat-figure-check'))
     checks='import nbformat\n'+CHECKS+'\nPath('+repr(str(result_path))+').write_text(json.dumps(validation_payload,indent=2),encoding="utf8")'
     executed.cells.append(nbformat.v4.new_code_cell(checks))
     manager=KernelManager(kernel_name='week7-day1-validation',kernel_spec_manager=KernelSpecManager(kernel_dirs=[str(kernel_root)]))
@@ -337,6 +444,7 @@ def execute(nb,kernel_root,result_path):
         if manager.has_kernel:manager.shutdown_kernel(now=True)
         manager.cleanup_resources()
     executed.cells.pop()
+    executed.cells=[c for c in executed.cells if c.id!='private-thermostat-figure-check']
     return executed
 
 
@@ -354,21 +462,55 @@ def output_checks(snapshot):
         assert ';'.join(hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in sources)==row.source_sha256
         assert row.task in {'A','B','C','D','E','F','Optional'}
     assert manifest.set_index('id').loc['F71-02','units']=='dimensionless'
-    assert manifest.loc[manifest.id.isin(['F71-05']),'slide'].str.contains('notebook',case=False).all()
+    assert manifest.loc[manifest.id.isin(['F71-06']),'slide'].str.contains('notebook',case=False).all()
     tasks=pd.read_csv(ROOT/'teaching/week7_day1_task_manifest.csv')
-    assert tasks.task_id.tolist()==list('ABCDEF') and tasks.minutes_including_debrief.sum()==62
+    assert tasks.task_id.tolist()==list('ABCDEF') and tasks.minutes_including_debrief.sum()==63
     assert tasks.slide.tolist()==[row[1] for row in TASKS]
     schedule=pd.read_csv(ROOT/'teaching/week7_day1_schedule.csv')
-    assert schedule.core_minutes.tolist()==SLIDE_MINUTES
-    assert schedule.groupby('block').core_minutes.sum().tolist()==[50]*4
+    assert schedule.slide.tolist()==list(range(1,49))
+    assert schedule.core_minutes.tolist()==SLIDE_MINUTES+[0]*4
+    assert schedule.loc[schedule.block>0].groupby('block').core_minutes.sum().tolist()==[50]*4
+    assert schedule.iloc[44:].role.tolist()==['References','Optional','Optional','Optional']
     assert pd.read_csv(OUTPUT/'tariff_cross_costs.csv',index_col=0).shape==(2,2)
     assert pd.read_csv(OUTPUT/'F71-11_native_table.csv').shape==(2,3)
     assert pd.read_csv(OUTPUT/'peak_comparison_metrics.csv').shape[0]==2
+    assert pd.read_csv(OUTPUT/'thermostat_comparison_metrics.csv').shape==(2,7)
+    assert pd.read_csv(OUTPUT/'F71-16_native_table.csv').shape==(9,4)
+    assert pd.read_csv(OUTPUT/'policy_comparison_metrics.csv').shape==(3,11)
     frozen=json.loads((snapshot/'protected_hashes.json').read_text(encoding='utf8'))
     for name,digest in frozen.items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
     external=json.loads((snapshot/'external_hashes.json').read_text(encoding='utf8'))
     for name,digest in external.items():assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==digest,name
     return len(frozen),len(external)
+
+
+def baseline_checks(snapshot):
+    """Preserve the live lesson structure, equations, supplied code and results."""
+    import re
+    import pandas as pd
+    baseline=snapshot/'baseline'
+    allowed_code={'w71-task-a','w71-task-b','w71-task-c','w71-task-d'}
+    equation_pattern=r'(?<!\\)(\${1,2})(.*?)(?<!\\)\1'
+    for suffix in ['', '_solution']:
+        before=nbformat.read(baseline/(STEM+suffix+'.ipynb'),4)
+        after=nbformat.read(ROOT/(STEM+suffix+'.ipynb'),4)
+        assert [c.id for c in before.cells]==[c.id for c in after.cells]
+        current={c.id:c for c in after.cells}
+        for cell in before.cells:
+            if cell.cell_type=='code' and cell.id not in allowed_code:
+                assert cell.source==current[cell.id].source,cell.id
+            elif cell.cell_type=='markdown':
+                assert re.findall(equation_pattern,cell.source,re.S)==re.findall(equation_pattern,current[cell.id].source,re.S),cell.id
+    checked_tables=[]
+    for old in sorted((baseline/'teaching/week7_day1_outputs').glob('*.csv')):
+        current=OUTPUT/old.name
+        assert current.is_file(),old.name
+        a=pd.read_csv(old);bframe=pd.read_csv(current)
+        pd.testing.assert_frame_equal(a,bframe,check_exact=False,atol=1e-6,rtol=0)
+        checked_tables.append(old.name)
+    return {'baseline_cells':len(before.cells),'equations_and_supplied_code':'unchanged',
+            'numeric_atol':1e-6,'numeric_rtol':0,'unchanged_reference_tables':checked_tables,
+            'task_code_review':'clearer intermediate calculations and tariff-table loop'}
 
 
 def main():
@@ -378,7 +520,9 @@ def main():
     OUTPUT.mkdir(parents=True,exist_ok=True)
     (OUTPUT/'protected_hashes.json').write_bytes((args.snapshot/'protected_hashes.json').read_bytes())
     student,solution=static_checks()
-    private=Path(tempfile.mkdtemp(prefix='BENV0169_week7_day1_validation_'))
+    # A normal directory avoids Windows tempfile mode-0700 ACL restrictions.
+    private=ROOT/'tmp'/('week7_day1_validation_'+uuid.uuid4().hex)
+    private.mkdir(parents=True)
     kernels=private/'kernels';spec=kernels/'week7-day1-validation';spec.mkdir(parents=True)
     (spec/'kernel.json').write_text(json.dumps({'argv':[sys.executable,'-m','ipykernel_launcher','-f','{connection_file}'],
         'display_name':'Week 7.1 validation','language':'python'}),encoding='utf8')
@@ -394,9 +538,11 @@ def main():
     # Dataframes can have NaNs for objective-specific columns; compare the encoded records.
     assert json.dumps(first,sort_keys=True)==json.dumps(second,sort_keys=True)
     static_checks();count,external_count=output_checks(args.snapshot)
+    baseline_evidence=baseline_checks(args.snapshot)
     first.update({'fresh_kernel_runs':2,'protected_files_unchanged':count,'external_files_unchanged':external_count,
         'paired_cells':len(student.cells),'student_task_stops':6,'student_outputs':0,'figure_pairs':len(FIGURES),
         'private_evidence_directory':str(private),'pre_edit_snapshot':str(args.snapshot),
+        'baseline_preservation':baseline_evidence,
         'command':subprocess.list2cmdline([sys.executable,'-B',*sys.argv])})
     # Objective-specific dataframe columns use NaN for "not applicable".
     # Store those as JSON null, retaining every numerical result unchanged.

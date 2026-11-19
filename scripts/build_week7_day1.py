@@ -6,23 +6,10 @@ import nbformat as nbf
 
 ROOT=Path(__file__).resolve().parents[1]
 STEM='tutorial_7_1_building_optimisation'
-TASKS=[('A',11,15),('B',21,8),('C',24,10),('D',28,10),('E',36,12),('F',40,7)]
-SLIDE_MINUTES=[2,2,3,3,4,4,4,4,5,4,15,5,4,4,5,5,5,6,4,4,8,5,4,10,4,4,4,10,3,3,3,3,5,4,4,12,4,3,4,7,2,2]
-FIGURES=[
-    ('F71-01', 15, 'w7d1_F01_planning_case', 'Supplied outdoor temperature, endpoint comfort bounds and ToU prices; known future inputs.'),
-    ('F71-02', 12, 'w7d1_F02_toy_feasible_region', 'Dimensionless graphical LP: labelled half-planes, feasible intersection, contours, improvement direction and optimum; show after Task A.'),
-    ('F71-03', 17, 'w7d1_F03_thermal_time_index', 'Two interval actions and three boundary states; interval comfort is checked at the endpoint.'),
-    ('F71-04', 25, 'w7d1_F04_hard_schedule', 'Hard-comfort ToU plan: 48 interval powers and 49 boundary temperatures.'),
-    ('F71-05', 'Notebook only', 'w7d1_F05_hard_soft_comparison', 'Hard versus lower-soft traces at gamma=0.25; bill and penalty reported separately in metrics.'),
-    ('F71-06', 37, 'w7d1_F06_penalty_tradeoff', 'Bill versus lower shortfall for the expanded gamma sweep, with the hard-comfort baseline.'),
-    ('F71-08', 29, 'w7d1_F08_tariff_cross_evaluation', 'Flat-optimised and ToU-optimised powers and temperatures under identical hard physical constraints.'),
-    ('F71-09', 44, 'w7d1_F09_initial_error_effect', 'Optional signed initial-observation error; fixed-plan replay starts from true 20 C; both violation signs and failures retained.'),
-    ('F71-11', 30, 'w7d1_F11_tariff_bill_table', 'Two optimisation tariffs by two evaluation tariffs; all four bills in pounds; native table CSV included.'),
-    ('F71-12', 40, 'w7d1_F12_peak_objective_comparison', 'Cost/peak schedules with bill, energy, mean endpoint temperature, peak power, maximum interval energy and both comfort components.'),
-    ('F71-13', 27, 'w7d1_F13_tariff_inputs', 'Supplied ToU price profile and its positive arithmetic-mean flat comparator.'),
-    ('F71-14', 38, 'w7d1_F14_penalty_sensitivity', 'Bill, penalised objective and lower shortfall versus gamma; piecewise changes and plateaus are retained.'),
-]
-FIGURE_TASKS={'F71-01': 'B', 'F71-02': 'A', 'F71-03': 'B', 'F71-04': 'C', 'F71-05': 'E', 'F71-06': 'E', 'F71-08': 'D', 'F71-09': 'Optional', 'F71-11': 'D', 'F71-12': 'F', 'F71-13': 'D', 'F71-14': 'E'}
+TASKS=[('A',11,15),('B',21,8),('C',24,9),('D',29,12),('E',38,12),('F',42,7)]
+SLIDE_MINUTES=[2,2,3,3,4,4,4,4,5,4,15,5,4,4,5,5,5,6,4,4,8,4,3,9,3,2,3,3,12,2,3,2,4,3,5,4,4,12,4,3,4,7,2,2]
+FIGURES=[('F71-01', 17, 'w7d1_F01_planning_case', 'Supplied outdoor temperature, endpoint comfort bounds and ToU prices; known future inputs.'), ('F71-02', 13, 'w7d1_F02_toy_feasible_region', 'Dimensionless graphical LP: labelled half-planes, feasible intersection, contours, improvement direction and optimum; show after Task A.'), ('F71-03', 19, 'w7d1_F03_thermal_time_index', 'Two interval actions and three boundary states; interval comfort is checked at the endpoint.'), ('F71-04', 27, 'w7d1_F04_hard_schedule', 'Hard-comfort ToU plan: 48 interval powers and 49 boundary temperatures.'), ('F71-05', 42, 'w7d1_F05_hard_soft_comparison', 'Hard versus lower-soft traces at gamma=0.25; lecturer-selected schedule comparison on source slide 37, now 39.'), ('F71-06', 'Notebook only', 'w7d1_F06_penalty_tradeoff', 'Bill versus lower shortfall for the expanded gamma sweep, with the hard-comfort baseline; supplementary trade-off, not the schedule figure on slide 39.'), ('F71-08', 32, 'w7d1_F08_tariff_cross_evaluation', 'Flat-optimised and ToU-optimised powers and temperatures under identical hard physical constraints.'), ('F71-09', 49, 'w7d1_F09_initial_error_effect', 'Optional signed initial-observation error; fixed-plan replay starts from true 20 C; both violation signs and failures retained.'), ('F71-11', 33, 'w7d1_F11_tariff_bill_table', 'Two optimisation tariffs by two evaluation tariffs; all four bills in pounds; native table CSV included.'), ('F71-12', 45, 'w7d1_F12_peak_objective_comparison', 'Cost/peak schedules with bill, energy, mean endpoint temperature, peak power, maximum interval energy and both comfort components.'), ('F71-13', 30, 'w7d1_F13_tariff_inputs', 'Supplied ToU price profile and its positive arithmetic-mean flat comparator.'), ('F71-14', 43, 'w7d1_F14_penalty_sensitivity', 'Bill, penalised objective and lower shortfall versus gamma; piecewise changes and plateaus are retained.'), ('F71-15', 35, 'w7d1_F15_thermostat_comparison', 'Price-blind midpoint thermostat and checked hard ToU schedule at common ToU prices; midpoint tracking and band constraints are different operating policies.'), ('F71-16', 36, 'w7d1_F16_policy_metrics_table', 'ToU-optimised, flat-optimised and thermostat policies: nine common metrics, all bills evaluated at the same original ToU prices; midpoint control and band-constrained optimisation differ.')]
+FIGURE_TASKS={'F71-01': 'B', 'F71-02': 'A', 'F71-03': 'B', 'F71-04': 'C', 'F71-05': 'E', 'F71-06': 'E', 'F71-08': 'D', 'F71-09': 'Optional', 'F71-11': 'D', 'F71-12': 'F', 'F71-13': 'D', 'F71-14': 'E', 'F71-15': 'D', 'F71-16': 'D'}
 
 
 def make_notebook(solution=False):
@@ -35,25 +22,29 @@ def make_notebook(solution=False):
     def task(letter,answer,scaffold):code('task-'+letter.lower(),answer if solution else scaffold,['task',letter])
 
     md('purpose',r'''
-    # Tutorial 7.1: Optimisation foundations for building operation
+    # Tutorial 7.1: Optimisation for building operation
 
     Formulate and check an optimisation problem, then compare operating schedules
     under common physical conditions. Begin with a dimensionless graphical example;
     use the supplied building model for the subsequent heating exercises.
 
+    Week 5 adjusted model inputs to improve agreement with observations. Week 7
+    chooses operating actions to meet a stated objective and constraints.
+
     **Outcomes:** distinguish variables, parameters, objectives and constraints;
     formulate a linear program; verify a returned schedule; compare tariffs fairly;
-    interpret comfort slack and a peak-power objective.
+    compare an optimised schedule with a reactive thermostat; interpret comfort
+    slack and a peak-power objective.
 
     | Block | Slides | Minutes | Focus |
     |---|---|---:|---|
-    | 1 | 1–11 | 50 | Terminology, graphical LP and Task A |
-    | 2 | 12–21 | 50 | Heating brief, hard formulation and Task B |
-    | Break | after 21 | 15–20 additional | Save and pause |
-    | 3 | 22–31 | 50 | Checked solve and flat/ToU comparison, Tasks C–D |
-    | 4 | 32–42 | 50 | Lower-soft comfort and peak minimisation, Tasks E–F |
+    | 1 | 1–12 | 50 | Terminology, graphical LP and Task A |
+    | 2 | 13–23 | 50 | Heating brief, hard formulation and Task B |
+    | Break | after 23 | 15–20 additional | Save and pause |
+    | 3 | 24–35 | 50 | Checked solve, tariffs and thermostat, Tasks C–D |
+    | 4 | 36–46 | 50 | Lower-soft comfort and peak minimisation, Tasks E–F |
 
-    References are on slide 43. Slides 44-46 are optional. This notebook accompanies Lecture 7.1. Run from the repository root in the supplied environment.
+    References are on slide 48. Slides 49–51 are optional. This notebook accompanies Lecture 7.1. Run from the repository root in the supplied environment.
     ''')
     code('setup',r'''
     from pathlib import Path
@@ -85,17 +76,18 @@ def make_notebook(solution=False):
     OUTPUT_DIR=ROOT/"teaching/week7_day1_outputs"
     plt.rcParams.update({"figure.dpi":110,"font.size":12,"axes.grid":True,
         "grid.alpha":.2,"svg.fonttype":"none","savefig.facecolor":"white"})
-    COLOURS={"hard":"tab:blue","soft":"tab:orange","flat":"tab:green","tou":"tab:blue","peak":"tab:purple","truth":"black"}
+    COLOURS={"hard":"tab:blue","soft":"tab:orange","flat":"tab:green","tou":"tab:blue","peak":"tab:purple","truth":"black","thermostat":"tab:red"}
     print("CVXPY",cp.__version__,"installed solvers:",available_solvers,"selected:",SOLVER)
     ''')
     md('helpers-text',r'''
     ### Supplied plotting/export helpers
 
-    Set `EXPORT_ARTEFACTS=False` to avoid writing files. Plot states at boundaries
-    and powers over intervals. The supplied helpers are used as each result becomes
-    available; they do not load precomputed answers.
+    Set `EXPORT_ARTEFACTS=False` to display results without exporting files. Plot
+    states at boundaries and powers over intervals. The supplied helpers plot and
+    export each result after you calculate it.
     ''')
-    code('helpers',"FIGURE_SPECS="+repr(FIGURES)+"\nFIGURE_TASKS="+repr(FIGURE_TASKS)+"\n"+textwrap.dedent(r'''
+    code('helpers','FIGURE_SPECS='+repr(FIGURES)+'\n'+textwrap.dedent(r'''
+    FIGURE_TASKS={'F71-01': 'B', 'F71-02': 'A', 'F71-03': 'B', 'F71-04': 'C', 'F71-05': 'E', 'F71-06': 'E', 'F71-08': 'D', 'F71-09': 'Optional', 'F71-11': 'D', 'F71-12': 'F', 'F71-13': 'D', 'F71-14': 'E', 'F71-15': 'D', 'F71-16': 'D'}
     figure_manifest=[]
     source_paths=["data/reference_building/operation_conditions.csv","data/reference_building/verified_controller_model.json"]
     def export_table(frame,name,index=False):
@@ -110,7 +102,7 @@ def make_notebook(solution=False):
         if EXPORT_ARTEFACTS:
             FIGURE_DIR.mkdir(parents=True,exist_ok=True)
             for ext in ["png","svg"]:fig.savefig(FIGURE_DIR/f"{spec[2]}.{ext}",dpi=220)
-            usage="Notebook only" if not isinstance(spec[1],int) else ("Optional slide" if spec[1]>42 else "Core slide")
+            usage="Notebook only" if not isinstance(spec[1],int) else ("Optional slide" if spec[1]>44 else "Core slide")
             figure_manifest.append({"id":figure_id,"slide":spec[1],"use":usage,
                 "task":FIGURE_TASKS[figure_id],"png":f"figures/week7_day1/{spec[2]}.png",
                 "svg":f"figures/week7_day1/{spec[2]}.svg","notebook":"tutorial_7_1_building_optimisation_solution.ipynb",
@@ -121,7 +113,8 @@ def make_notebook(solution=False):
                 "N_intervals":0 if figure_id in {"F71-02","F71-10"} else (2 if figure_id=="F71-03" else N),
                 "counts":counts or ("diagram" if diagram else "48 inputs; 49 boundary states"),
                 "units":"dimensionless" if figure_id=="F71-02" else ("model roles" if figure_id=="F71-10" else "kW;kWh;h;degrees C;GBP;GBP/kWh"),
-                "assumptions":"Known future inputs; fixed COP; endpoint comfort; final comfort only" if not diagram else "Illustrative diagram, not measured data",
+                "assumptions":("Same model, initial state, COP, capacity and time step; price-blind midpoint feedback; no look-ahead or comfort guarantee; endpoint degree-hours" if figure_id in {"F71-15","F71-16"} else
+                               "Known future inputs; fixed COP; endpoint comfort; final comfort only" if not diagram else "Illustrative diagram, not measured data"),
                 "caption":spec[3]})
         plt.show();plt.close(fig)
 
@@ -157,7 +150,7 @@ def make_notebook(solution=False):
         export_table(pd.DataFrame({"state_time":state_time,"predicted_temperature_c":result["temperature_c"]}),name+"_states.csv")
     ''').strip())
     md('toy-text',r'''
-    ## O1. Task A — inequalities, contours and the optimum (slide 11; 15 min)
+    ## O1. Task A — inequalities, contours and the optimum (slide 12; 15 min)
 
     Choose the scalar variables $x,y$ in the following linear program:
 
@@ -171,17 +164,37 @@ def make_notebook(solution=False):
     \end{aligned}
     $$
 
-    The first and third constraints cap different weighted sums; the second caps
-    $y$. Nonnegative axes rule out negative decisions. Their intersection is the
-    feasible set. A contour $x-2y=c$ joins points with the same objective value;
-    smaller values are preferred. This illustrative LP is not a heating bill.
+    The first and third constraints limit weighted sums; the second limits
+    $y$. The last two require nonnegative decisions. Their
+    intersection is the feasible set. A contour $x-2y=c$ joins points with
+    the same objective value; smaller values are preferred. This illustrative LP
+    uses dimensionless quantities.
 
     Complete `feasible` and `objective_grid` on the supplied grid, then identify
     `best_xy` and `best_objective` among feasible points. Use the supplied plot to
-    explain which constraints are active (hold at equality) at your proposed optimum.
-    Reason graphically **before** running the subsequent solver verification.
-    A grid is an approximation; a solver check helps distinguish discretisation
-    from the continuous optimum. Not every LP has a unique vertex optimum.
+    explain which constraints are active (hold at equality) at your proposed
+    optimum. Reason graphically **before** running the subsequent solver
+    verification. The grid approximates the feasible region. Compare its result
+    with the continuous optimum returned by the solver. An LP can have several
+    optimal points.
+
+    A feasible point satisfies every constraint; an infeasible point violates at
+    least one. An infeasible problem has no feasible point. An optimum is a
+    feasible point with the best objective value.
+
+    In the [graphical activity](teaching/tutorial_7_1_graphical_lp.html), compare
+    coefficients $(1,-2)$ and $(1.5,-3)$: scaling the entire
+    objective by a strictly positive constant preserves the optimal points, but
+    changes the objective value. Set the sum limit below zero to make the problem
+    infeasible, then reset. Use **Optimal edge** to see multiple optimal points.
+    Changing only one coefficient can change the optimum. A constant objective
+    term leaves the optimal points unchanged.
+
+    An unbounded minimisation problem has feasible points with objective values
+    that decrease without limit. For $x,y\geq0$, $\min x$ has a
+    finite optimum, while $\min(-x)$ is unbounded. The activity's
+    constraints keep its feasible region bounded, so use these examples for a
+    separate sketch.
     ''')
     code('graph-grid',r'''
     x_grid=np.linspace(0.,4.5,451)
@@ -189,13 +202,16 @@ def make_notebook(solution=False):
     X,Y=np.meshgrid(x_grid,y_grid)
     ''')
     task('A',r'''
-    feasible=(X+Y<=4)&(Y<=3)&(2*X+Y<=6)&(X>=0)&(Y>=0)
-    objective_grid=X-2*Y
-    best_index=np.unravel_index(np.argmin(np.where(feasible,objective_grid,np.inf)),X.shape)
-    best_xy=np.array([X[best_index],Y[best_index]])
-    best_objective=float(objective_grid[best_index])
+    feasible = (X + Y <= 4) & (Y <= 3) & (2 * X + Y <= 6) & (X >= 0) & (Y >= 0)
+    objective_grid = X - 2 * Y
+    # Give infeasible points infinite cost before finding the smallest grid value.
+    feasible_objective = np.where(feasible, objective_grid, np.inf)
+    best_index = np.unravel_index(np.argmin(feasible_objective), X.shape)
+    best_xy = np.array([X[best_index], Y[best_index]])
+    best_objective = float(objective_grid[best_index])
     ''',r'''
     # TODO A: combine all five inequalities in feasible; evaluate objective_grid.
+    # Combine NumPy boolean arrays with &, enclosing each inequality in parentheses.
     # Use feasible points to obtain best_xy (two coordinates) and best_objective.
     raise NotImplementedError("Task A: shade the feasible intersection, inspect contours and locate the optimum.")
     ''')
@@ -255,11 +271,11 @@ def make_notebook(solution=False):
     export_table(graph_check,"graphical_solver_result.csv")
     ''')
     md('inputs-text',r'''
-    ## O2. The common heating case (slides 15–20)
+    ## O2. The common heating case (slides 17–22)
 
-    **Written brief:** Choose a heat-pump power schedule for the next 24 hours that
-    minimises electricity cost, respects power capacity and maintains the specified
-    indoor-temperature band, starting from the supplied initial state.
+    **Written brief:** Choose a heat-pump power schedule for the next 24 hours
+    that minimises electricity cost, respects power capacity and maintains the
+    specified indoor-temperature band, starting from the supplied initial state.
 
     | Brief phrase | Mathematical role |
     |---|---|
@@ -272,18 +288,24 @@ def make_notebook(solution=False):
 
     Use the first 48 half-hour intervals of the supplied synthetic operating data.
     Future weather, prices and comfort requirements are **assumed known** for this
-    deterministic planning exercise. The cost boundary is heat-pump electricity only:
-    no PV, battery, base load or standing charge.
+    deterministic planning exercise. The bill covers heat-pump electricity. PV,
+    batteries, base demand and standing charges are outside this cost boundary.
 
-    The common instructor JSON supplies $b,c,dt,COP$ and capacity. It was fitted on
-    all 28 identification days, separately from the Week 6 student holdout exercise.
-    We do not estimate another model here. Units are kW, h, kWh, °C and £; useful heat
-    is $COP\,P_k$. Additional gains are omitted from this compact teaching model.
+    The common instructor JSON supplies $b,c,dt,COP$ and capacity. It was
+    fitted on all 28 identification days, separately from the Week 6 student
+    holdout exercise. Use the supplied coefficients throughout. Units are kW, h,
+    kWh, °C and £; useful heat is $COP\,P_k$. Additional gains are omitted
+    from this compact teaching model.
 
-    Interval $k$ runs from $t_k$ to $t_{k+1}$. Its comfort limits $L_k,U_k$ are checked
-    at **$T_{k+1}$**. Endpoint checks do not certify within-interval comfort. The initial
-    temperature $T_0=20$°C is fixed. The final boundary has comfort limits, without an
-    additional terminal-temperature equality.
+    Interval $k$ runs from $t_k$ to $t_{k+1}$. Its
+    comfort limits $L_k,U_k$ are checked at **$T_{k+1}$**. Comfort
+    is assessed at these endpoints. Temperatures between endpoints require a
+    separate check. The initial temperature $T_0=20$°C is fixed. The final
+    temperature is constrained by its comfort band; its value within that band
+    remains a decision.
+
+    The indoor air-temperature band is a simplified operating requirement. Week 5
+    considered additional environmental and personal factors in thermal comfort.
     ''')
     code('inputs',r'''
     conditions=pd.read_csv(DATA_FILE,index_col="timestamp",parse_dates=True).iloc[:48].copy()
@@ -326,8 +348,8 @@ def make_notebook(solution=False):
     md('formulation',r'''
     ### The hard-comfort linear program
 
-    Let $\mathcal{K}=\{0,\ldots,N-1\}$ index the control intervals. The
-    cost-minimising schedule solves
+    Let $\mathcal{K}=\{0,\ldots,N-1\}$ index the control intervals. The cost-minimising schedule
+    solves
 
     $$
     \begin{aligned}
@@ -340,12 +362,19 @@ def make_notebook(solution=False):
     \end{aligned}
     $$
 
-    There are $N=48$ powers and $N+1=49$ boundary states. Predicted temperatures are
-    variables, but the dynamics determine their relation to the power schedule.
-    The stored discrete coefficient $c$ already incorporates the half-hour step;
-    do **not** multiply the recurrence by $dt$ again. The bill does require $dt$
-    to convert electrical kW into kWh. With supplied coefficients and inputs this
-    is a linear program. The first objective contains only the electricity bill.
+    There are $N=48$ powers and $N+1=49$ boundary states. The
+    predicted temperatures are variables linked to the power schedule by the
+    thermal dynamics. The stored discrete coefficient $c$ already
+    incorporates the half-hour step; use it directly in the recurrence.
+    Multiplying by $dt$ again would apply the time step twice. The
+    bill uses $dt$ to convert electrical kW into kWh. With supplied
+    coefficients and inputs this is a linear program. The first objective contains
+    only the electricity bill.
+
+    Because $\Delta t$ is the same positive constant for every term,
+    removing it from this entire bill objective preserves the optimum. Retain it
+    to report the bill in pounds; it also belongs wherever power is converted into
+    energy.
     ''')
     code('timeline',r'''
     fig,ax=plt.subplots(figsize=(12.5,3.5));ax.set(xlim=(-.4,2.5),ylim=(-1,1.4));ax.axis("off")
@@ -367,13 +396,14 @@ def make_notebook(solution=False):
     temperature=cp.Variable(N+1,name="boundary_temperature_c")
     ''')
     md('task-b-text',r'''
-    ### Task B — translate the heating brief (slide 21; 8 min)
+    ### Task B — translate the heating brief (slide 23; 8 min)
 
     Use the supplied variables and Parameters. Complete the capacity, dynamics,
-    endpoint comfort bounds and bill in the small skeleton below. `base_constraints`
-    contains only initial state, capacity and dynamics; `hard_constraints` adds both
-    comfort bounds. Formulate the problem here; Task C performs the solve.
-    Explain why temperatures have one more element than powers.
+    endpoint comfort bounds and bill in the small skeleton below.
+    `base_constraints` contains the initial state, capacity and dynamics;
+    `hard_constraints` adds both comfort bounds. Formulate the problem here; Task
+    C performs the solve. Explain why temperatures have one more element than
+    powers.
     ''')
     task('B',r'''
     base_constraints=[temperature[0]==initial_temperature,power<=P_MAX,
@@ -384,6 +414,7 @@ def make_notebook(solution=False):
     hard_problem=cp.Problem(objective,hard_constraints)
     ''',r'''
     base_constraints=[temperature[0]==initial_temperature]
+    # temperature[:-1] holds T_k; temperature[1:] holds T_(k+1).
     # TODO B: append capacity and the vector dynamics for temperature[1:].
     # hard_constraints = base_constraints + [lower endpoint bound, upper endpoint bound]
     # bill_expression = ...; objective = cp.Minimize(bill_expression)
@@ -391,18 +422,25 @@ def make_notebook(solution=False):
     raise NotImplementedError("Task B: complete hard capacity, dynamics, endpoint comfort and electricity cost.")
     ''')
     md('break',r'''
-    Save and take the **15–20-minute break after slide 21**. This break is additional
+    Save and take the **15–20-minute break after slide 23**. This break is additional
     to the 200 teaching minutes. The formulated problem retains fixed initial state,
     capacity and both hard endpoint comfort limits.
     ''')
     md('task-c-text',r'''
-    ## O3. Task C — solve and verify the hard LP (slide 24; 10 min)
+    ## O3. Task C — solve and verify the hard LP (slide 26; 9 min)
 
-    The formulation defines the problem; CVXPY expresses it in Python; the installed
-    numerical solver computes a candidate solution. Complete the solve and an
-    independent bill/energy calculation below. Reject failed status and non-finite
-    values before reading results. Supplied checks then inspect residuals and copy
-    all arrays before any re-solve. A solver status alone is insufficient evidence.
+    CVXPY expresses the formulation in Python and passes it to the selected
+    numerical solver. Complete the solve, check its status and confirm that the
+    returned arrays are finite. Calculate the bill and electricity use
+    independently from those arrays. The supplied helper then checks constraint
+    residuals and copies the results before the next solve.
+
+    An infeasible problem has no feasible schedule. Inspect the supplied inputs
+    and constraints if the solver returns this status. An initial temperature
+    below a comfort bound can still permit a feasible schedule because comfort is
+    first constrained at the next interval endpoint. An unbounded problem has
+    feasible points whose objective decreases without limit. Both statuses require
+    diagnosis before interpreting a schedule.
     ''')
     task('C',r'''
     if not hard_problem.is_dcp():raise ValueError("Inspect the formulation's convexity rules.")
@@ -412,7 +450,7 @@ def make_notebook(solution=False):
         raise RuntimeError(f"Nominal hard case failed: {hard_problem.status}; diagnose before changing comfort.")
     if any(v.value is None or not np.isfinite(v.value).all() for v in [power,temperature]):
         raise RuntimeError("The solver returned missing/non-finite arrays.")
-    hard_bill_check=float(sum(float(p)*float(q) for p,q in zip(price.value,power.value))*dt)
+    hard_bill_check=float(dt * np.sum(price.value * power.value))
     hard_energy_check=float(np.asarray(power.value).sum()*dt)
     ''',r'''
     if not hard_problem.is_dcp():raise ValueError("Inspect the formulation's convexity rules.")
@@ -426,14 +464,14 @@ def make_notebook(solution=False):
     ### Read the schedule and calculate its main results
 
     The inputs and model are fixed. After solving, check the written constraints
-    and calculate the results directly from the returned arrays. These checks can
-    catch coding or indexing mistakes; they are not an uncertainty experiment.
+    and calculate the results directly from the returned arrays. These checks
+    identify coding or indexing mistakes for the fixed inputs and model.
 
     The calculations below are ordinary NumPy operations. `power.value` contains
-    electrical kW; multiplying by `dt` gives kWh per interval. Multiply that energy
-    by the corresponding price and sum to obtain the electricity bill.
+    electrical kW; multiplying by `dt` gives kWh per interval. Multiply that
+    energy by the corresponding price and sum to obtain the electricity bill.
 
-    Mean indoor temperature below is the average of the **48 predicted interval-end
+    The reported mean indoor temperature averages the **48 predicted interval-end
     temperatures**, excluding the fixed initial state. Peak power is in **kW**;
     maximum energy in one half-hour interval is also shown, in **kWh**.
     ''')
@@ -489,11 +527,12 @@ def make_notebook(solution=False):
     `constraint.violation()` reports the numerical distance from satisfying each
     written constraint; we only use it as a supplied tolerance check.
 
-    For comfort reporting, **shortfall** means the number of degrees below the lower
-    bound; **overshoot** means degrees above the upper bound. A temperature within
-    the band has neither. Degree-hours sum those positive differences times `dt`.
-    Durations count only differences larger than `COMFORT_COUNT_TOL=1e-6` °C.
-    These definitions concern the 48 endpoints, not the initial state.
+    For comfort reporting, **shortfall** means the number of degrees below the
+    lower bound; **overshoot** means degrees above the upper bound. Both
+    deviations are zero inside the band. Degree-hours sum the positive differences
+    multiplied by `dt`. Durations count only differences larger than
+    `COMFORT_COUNT_TOL=1e-6` °C. These definitions use the 48 interval endpoints
+    and exclude the initial state.
     ''')
     code('result-checks',r'''
     def snapshot_result(problem,hard=True,objective_kind="bill",slack_variable=None,penalty_rate=0.,peak_variable=None):
@@ -576,30 +615,85 @@ def make_notebook(solution=False):
     save_figure(fig,"F71-04")
     ''')
     md('hard-interpretation',r'''
-    ### Interpret the checked plan (slides 25–26)
+    ### Interpret the checked plan (slides 27–28)
 
     Explain one period with heating and one without, using the actual power,
     temperature, comfort limits and tariff. Report energy, bill and residuals
-    separately. Do not change bounds or inputs to make a failed nominal case pass.
+    separately. If the nominal solve fails, inspect its status and formulation
+    while retaining the supplied inputs.
 
     The next experiment reuses the same `hard_problem` and its price Parameter.
-    Updating a Parameter changes the supplied vector while keeping the mathematical
-    structure. Copy each result immediately: a re-solve overwrites CVXPY values.
-    Repeated planning comparisons do not implement feedback control.
+    Updating a Parameter changes the supplied vector while keeping the
+    mathematical structure. Copy each result immediately: a re-solve overwrites
+    CVXPY values. Each comparison solves a complete plan for a different parameter
+    setting.
+    ''')
+    md('thermostat-text',r'''
+    ### A supplied thermostatic controller (slide 29)
+
+    A thermostat responds to the current indoor temperature. Optimisation can also
+    account for future prices and thermal dynamics. For interval $k$,
+    use the midpoint $R_k=(L_k+U_k)/2$, fixed independently of electricity prices:
+
+    $$
+    P_k^{\mathrm{th}}=
+    \begin{cases}
+    P_{\max}, & T_k^{\mathrm{th}}<R_k,\\
+    0, & T_k^{\mathrm{th}}\ge R_k.
+    \end{cases}
+    $$
+
+    Equality switches heating off. This on/off rule uses the current temperature
+    and midpoint reference, with zero hysteresis. Here **greedy** means reactive
+    or myopic. The switching rule depends only on temperature; electricity prices
+    are outside its inputs. Outdoor temperature enters the physical recurrence
+    after the heating decision.
+
+    Use the same 48 half-hour intervals, discrete model, COP, capacity and initial
+    temperature of 20°C as Task C. The coefficient $c$ already
+    contains the time step. Return 48 electrical powers and 49 boundary
+    temperatures with the simulated states retained in full. The resulting
+    trajectory can violate comfort at endpoints or between them. Report these
+    deviations alongside cost and electricity use. Both notebooks supply the
+    controller.
+    ''')
+    code('thermostat-helper',r'''
+    def run_thermostat(outdoor,lower,upper,initial_c,b,c,cop,p_max):
+        reference=(lower+upper)/2
+        thermostat_power=np.zeros(len(outdoor))
+        thermostat_temperature=np.empty(len(outdoor)+1)
+        thermostat_temperature[0]=initial_c
+        for k in range(len(outdoor)):
+            thermostat_power[k]=p_max if thermostat_temperature[k]<reference[k] else 0.
+            thermostat_temperature[k+1]=(1-b)*thermostat_temperature[k]+b*outdoor[k]+c*cop*thermostat_power[k]
+        return thermostat_power.copy(),thermostat_temperature.copy()
+
+    thermostat_reference=(lower+upper)/2
+    thermostat_power,thermostat_temperature=run_thermostat(outdoor,lower,upper,TRUE_T0,b,c,COP,P_MAX)
     ''')
     md('task-d-text',r'''
-    ## O4. Task D — flat versus ToU tariffs (slide 28; 10 min)
+    ## O4. Task D — compare tariffs and the thermostat (slide 31; 12 min)
 
     Time-of-use (ToU) prices vary across intervals. The controlled flat comparator
-    is their arithmetic mean because all intervals have equal duration; this does
-    not describe commercial tariff design. Keep model, weather, initial state,
-    capacity, comfort, horizon and terminal treatment identical.
+    is their arithmetic mean because all intervals have equal duration. This
+    controlled price profile supports the scheduling comparison. Keep model,
+    weather, initial state, capacity, comfort, horizon and terminal treatment
+    identical.
 
     Update only `price.value` and solve the same hard problem for the flat tariff.
     Keep the copied ToU result from Task C. Complete the 2×2 `cross_costs` table:
     rows identify the optimisation tariff; columns identify the evaluation tariff.
-    Evaluate each fixed schedule with both profiles. Comparing diagonal bills alone
-    changes both schedule and tariff and cannot isolate the value of scheduling.
+    Evaluate each fixed schedule with both profiles. Comparing diagonal bills
+    alone changes both schedule and tariff and cannot isolate the value of
+    scheduling.
+
+    Then run the supplied thermostat comparison under the **same original ToU
+    prices**. Identify a price-blind heating action and explain any anticipatory
+    scheduling visible in the optimum. Compare bill, electricity and endpoint
+    comfort. Explain why the bill difference cannot be attributed entirely to
+    price response: the thermostat follows a midpoint reference, while the
+    optimiser satisfies a band. Use the computed traces to determine the direction
+    of each difference. Include this comparison in your Task D interpretation.
     ''')
     code('tariff-inputs',r'''
     tou_prices=dynamic_prices.copy()  # original source column retained in conditions
@@ -617,18 +711,20 @@ def make_notebook(solution=False):
     md('parameter-methods',r'''
     ### Two ways to change the input prices
 
-    **1. Build a new problem.** Use the new price array when writing a fresh objective
-    and problem, as in the supplied flat-price example below. New power/state
-    variables make it clear that this is a separate formulation of the same case.
+    **1. Build a new problem.** Use the new price array when writing a fresh
+    objective and problem, as in the supplied flat-price example below. New
+    power/state variables make it clear that this is a separate formulation of the
+    same case.
 
-    **2. Update a Parameter.** Our original `price` is a CVXPY `Parameter`.
-    Assign `price.value=flat_prices`, then solve `hard_problem` again. The variables
-    and constraints stay the same. Task D uses this shorter approach.
+    **2. Update a Parameter.** Our original `price` is a CVXPY `Parameter`. Assign
+    `price.value=flat_prices`, then solve `hard_problem` again. The variables and
+    constraints stay the same. Task D uses this shorter approach.
 
-    Changing a NumPy price array does not rewrite an objective already constructed
-    from its old values. In either approach, save copies of each result before the
-    next solve. Both approaches should give the same optimal bill within tolerance,
-    although an LP can have several schedules with that bill.
+    An objective constructed from a NumPy array retains the values used at
+    construction. Use a new objective or update a CVXPY Parameter to change them.
+    In either approach, save copies of each result before the next solve. Both
+    approaches should give the same optimal bill within tolerance, although an LP
+    can have several schedules with that bill.
     ''')
     code('rebuild-example',r'''
     # Method 1: construct a new flat-price problem explicitly.
@@ -651,15 +747,20 @@ def make_notebook(solution=False):
     print(f"Rebuilt flat-price bill: £{rebuilt_bill:.3f}")
     ''')
     task('D',r'''
-    # Method 2: update the existing price Parameter.
-    price.value=flat_prices.copy()
-    flat_solution=solve_case(hard_problem)
-    require_success(flat_solution,"Flat tariff hard comfort")
-    tariff_solutions={"Flat":flat_solution,"ToU":hard_solution}
-    cross_costs=pd.DataFrame({evaluation:{planning:float(np.dot(tariff,result["power_kw"])*dt)
-        for planning,result in tariff_solutions.items()} for evaluation,tariff in tariffs.items()})
-    cross_costs.index.name="optimisation_tariff";cross_costs.columns.name="evaluation_tariff"
-    scheduling_value_tou=float(cross_costs.loc["Flat","ToU"]-cross_costs.loc["ToU","ToU"])
+    # Update the price Parameter and save a copy of the flat-price solution.
+    price.value = flat_prices.copy()
+    flat_solution = solve_case(hard_problem)
+    require_success(flat_solution, "Flat tariff hard comfort")
+
+    tariff_solutions = {"Flat": flat_solution, "ToU": hard_solution}
+    cross_costs = pd.DataFrame(index=list(tariff_solutions), columns=list(tariffs), dtype=float)
+    for planning_tariff, result in tariff_solutions.items():
+        saved_power = result["power_kw"]
+        for evaluation_tariff, evaluation_prices in tariffs.items():
+            cross_costs.loc[planning_tariff, evaluation_tariff] = dt * np.sum(evaluation_prices * saved_power)
+    cross_costs.index.name = "optimisation_tariff"
+    cross_costs.columns.name = "evaluation_tariff"
+    scheduling_value_tou = float(cross_costs.loc["Flat", "ToU"] - cross_costs.loc["ToU", "ToU"])
     ''',r'''
     # TODO D: assign flat_prices to price.value, solve hard_problem and copy flat_solution.
     # Retain hard_solution as the ToU plan in tariff_solutions.
@@ -694,28 +795,149 @@ def make_notebook(solution=False):
     export_table(shown,"F71-11_native_table.csv")
     fig=table_figure(shown,figsize=(12.5,3.5),fontsize=15)
     save_figure(fig,"F71-11",counts="2 optimisation tariffs x 2 evaluation tariffs")
+
     ''')
     md('tariff-interpretation',r'''
-    ### Interpret tariffs under common evaluation prices (slides 29–31)
+    ### Interpret tariffs under common evaluation prices (slides 32–34)
 
-    Use one column of the bill table to isolate the effect of changing the schedule.
-    The ToU optimum cannot cost more under ToU than the feasible flat plan, within
-    solver tolerance; the corresponding inequality holds for flat evaluation.
-    Report the computed energy and peak as well as bill and comfort. Positive flat
-    prices make bill minimisation equivalent to energy minimisation. A ToU plan can
-    use more electricity while costing less under ToU, but that pattern is not
-    guaranteed. Neither strict savings nor unique schedules are assumed.
+    Use one column of the bill table to isolate the effect of changing the
+    schedule. The ToU optimum cannot cost more under ToU than the feasible flat
+    plan, within solver tolerance; the corresponding inequality holds for flat
+    evaluation. Report the computed energy and peak as well as bill and comfort.
+    Positive flat prices make bill minimisation equivalent to energy minimisation.
+    A ToU plan may use more electricity while costing less under ToU. The computed
+    schedules determine these differences; equal bills and multiple optimal
+    schedules are also possible.
 
     The first summary table reports each schedule under its **own** tariff, as a
     description of those two plans. Its diagonal bills change both prices and
     schedule. Use the separate cross-table to isolate the value of changing the
     schedule under common prices.
+
+    The following controller comparison adds the thermostat and evaluates all
+    three policies at the same original ToU prices, keeping evaluation prices
+    fixed while comparing their schedules, electricity use and comfort.
+    ''')
+    code('thermostat-comparison',r'''
+    # Task D changed the optimisation price Parameter to flat prices. The supplied
+    # thermostat must return exactly the same actions and states as before it.
+    repriced_power,repriced_temperature=run_thermostat(outdoor,lower,upper,TRUE_T0,b,c,COP,P_MAX)
+    np.testing.assert_array_equal(repriced_power,thermostat_power)
+    np.testing.assert_array_equal(repriced_temperature,thermostat_temperature)
+    thermostat_repricing=pd.Series({name:float(dt*np.sum(values*thermostat_power))
+                                   for name,values in tariffs.items()},name="Same thermostat: bill (£)")
+    display(thermostat_repricing.round(3))
+
+    # Both rows use original ToU prices, irrespective of the current price.value.
+    # Reuse Task C's independently checked copies; do not re-solve or overwrite them.
+    thermostat_policies={"Thermostat":(thermostat_power,thermostat_temperature),
+                         "ToU-optimised schedule":(hard_solution["power_kw"],hard_solution["temperature_c"])}
+    thermostat_rows=[]
+    for name,(policy_power,policy_temperature) in thermostat_policies.items():
+        endpoints=policy_temperature[1:]
+        thermostat_rows.append({"policy":name,
+            "bill_gbp":float(dt*np.sum(dynamic_prices*policy_power)),
+            "energy_kwh":float(dt*np.sum(policy_power)),
+            "peak_electric_kw":float(np.max(policy_power)),
+            "mean_temperature_c":float(endpoints.mean()),
+            "below_band_degree_hours":float(dt*np.maximum(lower-endpoints,0.).sum()),
+            "above_band_degree_hours":float(dt*np.maximum(endpoints-upper,0.).sum())})
+    thermostat_comparison=pd.DataFrame(thermostat_rows)
+    display(thermostat_comparison.set_axis(["Policy","Bill (£)","Electricity (kWh)",
+        "Peak power (kW)","Mean endpoint T (°C)","Below band (°C h)","Above band (°C h)"],axis=1).round(3))
+    export_table(thermostat_comparison,"thermostat_comparison_metrics.csv")
+
+    fig,axes=plt.subplots(3,1,sharex=True,figsize=(12.5,3.5),
+                          gridspec_kw={"height_ratios":[1,1,1.5]})
+    axes[0].stairs(dynamic_prices,state_time,color="black")
+    axes[0].set_ylabel("Price\n(£/kWh)")
+    for name,key,style in [("Thermostat","thermostat","--"),("ToU-optimised schedule","tou","-")]:
+        policy_power,policy_temperature=thermostat_policies[name]
+        axes[1].stairs(policy_power,state_time,color=COLOURS[key],linestyle=style,label=name)
+        axes[2].plot(state_time,policy_temperature,color=COLOURS[key],linestyle=style)
+    axes[1].set_ylabel("Power\n(kW)")
+    axes[1].legend(loc="center left",bbox_to_anchor=(1.01,.5),fontsize=10,frameon=False)
+    # L[k] and U[k] constrain T[k+1], so use the same endpoint coordinates
+    # as comfort_lines in the earlier figures. Joining points is a visual guide.
+    axes[2].fill_between(state_time[1:],lower,upper,
+                         color="0.85",alpha=.5,label="Endpoint comfort band")
+    axes[2].plot(state_time[1:],lower,".--",color="0.4",markersize=3,linewidth=.8)
+    axes[2].plot(state_time[1:],upper,".--",color="0.4",markersize=3,linewidth=.8)
+    axes[2].stairs(thermostat_reference,state_time,baseline=None,color="black",linestyle=":",label="Midpoint reference")
+    axes[2].set(ylabel="Temperature\n(°C)",xlabel="Time (interval edges and state boundaries)")
+    axes[2].legend(loc="center left",bbox_to_anchor=(1.01,.5),fontsize=10,frameon=False)
+    for ax in axes:clock_axis(ax)
+    save_figure(fig,"F71-15",counts="2 policies; 48 interval powers and 49 boundary states each; same ToU prices")
+
+    # Compare all three policies using the same metrics as the peak-objective table.
+    # The flat schedule was optimised at flat prices, but its bill here uses ToU.
+    comparison_policies={"ToU optimum":(hard_solution["power_kw"],hard_solution["temperature_c"]),
+                         "Flat optimum":(flat_solution["power_kw"],flat_solution["temperature_c"]),
+                         "Thermostat":(thermostat_power,thermostat_temperature)}
+    policy_rows=[]
+    for name,(policy_power,policy_temperature) in comparison_policies.items():
+        endpoints=policy_temperature[1:]
+        shortfall=np.maximum(lower-endpoints,0.)
+        overshoot=np.maximum(endpoints-upper,0.)
+        policy_rows.append({"policy":name,"evaluation_tariff":"ToU",
+            "bill_gbp":float(dt*np.sum(dynamic_prices*policy_power)),
+            "energy_kwh":float(dt*np.sum(policy_power)),
+            "mean_temperature_c":float(endpoints.mean()),
+            "peak_electric_kw":float(np.max(policy_power)),
+            "peak_interval_energy_kwh":float(dt*np.max(policy_power)),
+            "hours_below_band":float(dt*np.sum(shortfall>COMFORT_COUNT_TOL)),
+            "hours_above_band":float(dt*np.sum(overshoot>COMFORT_COUNT_TOL)),
+            "below_band_degree_hours":float(dt*shortfall.sum()),
+            "above_band_degree_hours":float(dt*overshoot.sum())})
+    policy_comparison=pd.DataFrame(policy_rows)
+    export_table(policy_comparison,"policy_comparison_metrics.csv")
+    policy_metrics_table=pd.DataFrame({"Metric":["Bill at ToU prices (£)",*SUMMARY_LABELS[1:]],
+        **{name:policy_comparison.set_index("policy").loc[name,SUMMARY_COLUMNS].to_numpy(dtype=float)
+           for name in comparison_policies}})
+    display(policy_metrics_table.round(3))
+    export_table(policy_metrics_table,"F71-16_native_table.csv")
+    policy_metric_rows=[[label,*[f"{value:.3f}" for value in values]]
+                        for label,*values in policy_metrics_table.itertuples(index=False,name=None)]
+    fig,ax=plt.subplots(figsize=(12.5,3.5));ax.axis("off")
+    tab=ax.table(cellText=policy_metric_rows,colLabels=list(policy_metrics_table.columns),
+                 cellLoc="center",loc="center",colWidths=[.40,.20,.20,.20])
+    tab.auto_set_font_size(False);tab.set_fontsize(11);tab.scale(1,1.6)
+    ax.set_title("Three operating policies: all bills evaluated at the same ToU prices",fontsize=12)
+    save_figure(fig,"F71-16",counts="9 metrics x 3 policies; common ToU evaluation prices")
+    ''')
+    md('thermostat-interpretation',r'''
+    ### Interpret the controller comparison (slide 35)
+
+    Read the six metrics together with the traces. Compare bill, electricity use
+    and comfort separately. The midpoint rule can maintain a different average
+    temperature from the band-constrained optimum and can overshoot or fall below
+    the band. The degree-hours describe the thermostat trajectory. The optimised
+    hard schedule is checked against its comfort constraints.
+
+    The shaded band and its marked bounds use the interval-end times, as in the
+    earlier figures: $L_k,U_k$ apply to $T_{k+1}$. Lines between
+    those endpoints connect the sampled values. Comfort is constrained at the
+    endpoints. The midpoint reference remains an interval input to the thermostat
+    rule.
+
+    The three-policy table adds the flat-optimised schedule, using the same metric
+    rows as the later cost-versus-peak table. All three bills use the original ToU
+    tariff. Thus the flat schedule's bill here differs from its own-tariff bill
+    above. Compare the ToU and flat schedules under their common hard constraints;
+    interpret the thermostat's bill together with its different temperature policy
+    and any measured comfort deviations.
+
+    **Task D short response:** name one interval where thermostat heating follows
+    its temperature reference. Explain any anticipatory heating supported by the
+    optimised trace. Compare bill, electricity and comfort, then explain why the
+    policy definitions also affect the bill difference. State the result for the
+    supplied day and operating conditions.
     ''')
     md('task-e-text',r'''
-    ## O5. Task E — lower comfort slack and its penalty (slide 36; 12 min)
+    ## O5. Task E — lower comfort slack and its penalty (slide 41; 12 min)
 
-    Introduce nonnegative slack $s_k$ to allow a lower-temperature shortfall.
-    Following the lecture notation, the lower-soft problem is
+    Introduce nonnegative slack $s_k$ to allow a lower-temperature
+    shortfall. Following the lecture notation, the lower-soft problem is
 
     $$
     \begin{aligned}
@@ -730,23 +952,28 @@ def make_notebook(solution=False):
     \end{aligned}
     $$
 
-    where $\phi(s)=\Delta t\sum_{k=0}^{N-1}s_k$. Only the lower comfort bound is
-    relaxed; the initial state, dynamics, capacity and upper comfort bound remain hard.
+    where $\phi(s)=\Delta t\sum_{k=0}^{N-1}s_k$. Only the lower comfort bound is relaxed; the initial
+    state, dynamics, capacity and upper comfort bound remain hard.
 
-    $\phi(s)$ is total slack in °C h; $\gamma$ has units £/(°C h). A 0.4°C
-    shortfall for 0.5 h gives 0.2°C h; at £2.50/(°C h), the penalty is £0.50.
-    The assigned penalty is separate from the metered electricity bill.
+    $\phi(s)$ is total slack in °C h; $\gamma$ has units £/(°C h).
+    A 0.4°C shortfall for 0.5 h gives 0.2°C h; at £2.50/(°C h), the penalty is
+    £0.50. The assigned penalty is separate from the metered electricity bill.
 
     Complete the lower-soft constraints and objective. The supplied sweep includes
-    the lecture values 0.25, 2.5 and 25 plus intermediate values. Examine the bill,
-    physical shortfall and penalised objective as $\gamma$ increases. LP solutions
-    can change at thresholds and have plateaus: the response need not be smooth.
-    A finite penalty does not guarantee zero shortfall in every problem.
+    the lecture values 0.25, 2.5 and 25 plus intermediate values. Examine the
+    bill, physical shortfall and penalised objective as $\gamma$
+    increases. LP solutions can change at thresholds and have plateaus: the
+    response need not be smooth. A finite penalty can leave a positive shortfall
+    at the optimum.
 
     The lecture also mentions quadratic and absolute penalties. They require their
     own units/weight interpretation. With nonnegative slack, absolute slack equals
-    slack; a quadratic penalty gives a different trade-off and a QP. This task uses
-    only the total-slack definition above.
+    slack; a quadratic penalty gives a different trade-off and a QP. This task
+    uses only the total-slack definition above.
+
+    Changing $\gamma$ changes the relative preference for cost and
+    shortfall; it may change the optimum. Small weight changes can also leave the
+    selected schedule unchanged.
     ''')
     code('soft-parameters',r'''
     price.value=tou_prices.copy();initial_temperature.value=TRUE_T0
@@ -825,14 +1052,14 @@ def make_notebook(solution=False):
     save_figure(fig,"F71-14",counts=f"{len(PENALTY_WEIGHTS)} fixed-case penalty values; failures retained")
     ''')
     md('penalty-interpretation',r'''
-    The larger weights approach the hard-comfort bill in this case as lower
-    shortfall is discouraged. Use the actual table/plots to identify thresholds or
-    plateaus; do not interpret the weight as an empirically measured willingness
-    to pay. If a solve fails, report its status and do not interpret missing values
-    as a valid schedule. Increasing a weight does not change the equipment capacity.
+    Larger penalty weights discourage shortfall and produce bills closer to the
+    hard-comfort bill in this case. Use the computed tables and plots to identify
+    thresholds and plateaus. The weights specify the assigned cost of discomfort.
+    Equipment capacity stays fixed throughout the sweep. Report failed solves by
+    status and interpret schedules from successful solves.
     ''')
     md('task-f-text',r'''
-    ## O6. Task F — minimise peak power (slide 40; 7 min)
+    ## O6. Task F — minimise peak power (slide 45; 7 min)
 
     The peak-minimising schedule retains the same hard-comfort constraints:
 
@@ -849,12 +1076,13 @@ def make_notebook(solution=False):
     \end{aligned}
     $$
 
-    Complete the constraint and objective; the solve, checks and plots are supplied.
-    The objective is in **kW**, not £. Compare actual `max(power)`, kWh and the bill
-    under the same ToU prices with the cost-optimal schedule. The minimum peak cannot
-    exceed that of a feasible baseline beyond tolerance. Energy and bill need not
-    fall. Several minimum-peak schedules may have different energy use and bills;
-    we describe the returned optimum without an undisclosed secondary objective.
+    Complete the constraint and objective; the solve, checks and plots are
+    supplied. The objective measures peak electrical power in **kW**. Compare
+    actual `max(power)`, kWh and the bill under the same ToU prices with the
+    cost-optimal schedule. The minimum peak cannot exceed that of a feasible
+    baseline beyond tolerance. Energy and bill can increase when minimising peak.
+    Several minimum-peak schedules may have different energy use and bills; report
+    the returned optimum under the stated peak objective.
     ''')
     code('peak-parameter',r'''
     initial_temperature.value=TRUE_T0;price.value=tou_prices.copy()
@@ -895,29 +1123,34 @@ def make_notebook(solution=False):
     save_figure(fig,"F71-12",counts="2 objectives; 48 powers and 49 states each")
     ''')
     md('interpretation',r'''
-    ### Other objectives and the Week 8 boundary (slides 39–42)
+    ### Other objectives and the Week 8 boundary (slides 44–46)
 
-    Energy $\Delta t\sum_kP_k$ is in kWh, bill $\Delta t\sum_kp_kP_k$ is in £,
-    and peak power is in kW. Each ranks feasible schedules differently. Combining
-    bill and peak requires a weight in £/kW; such a weight is not automatically a
-    real demand charge. A comfort-tracking target also differs from an admissible band.
+    Energy $\Delta t\sum_kP_k$ is in kWh, bill $\Delta t\sum_kp_kP_k$ is in £, and peak
+    power is in kW. Each ranks feasible schedules differently. Combining bill and
+    peak requires a weight in £/kW; interpret the weight according to the
+    specified objective or tariff. A comfort-tracking target also differs from an
+    admissible band.
 
-    Explain one tariff effect under common evaluation prices, one comfort trade-off,
-    and one effect of the peak objective using the computed records. The supplied
-    model, known-input assumption and endpoint constraints limit these conclusions.
-    Today we re-solve complete plans for different parameters. Week 8 adds measurement,
-    first-action application, horizon shifting and re-optimisation; this notebook
-    contains no MPC feedback loop.
+    Explain one tariff effect under common evaluation prices, one comfort
+    trade-off, and one effect of the peak objective using the computed records.
+    The supplied model, known-input assumption and endpoint constraints limit
+    these conclusions. The thermostat already uses temperature feedback. MPC
+    combines feedback with predictions and repeated optimisation over a moving
+    horizon. Today we re-solve complete plans for different parameters. Week 8
+    adds first-action application, horizon shifting and re-optimisation to the
+    fixed-plan comparisons used here. Thermostatic control is price-blind;
+    optimised scheduling uses the specified objective and constraints.
     ''')
     md('initial-error-text',r'''
-    ## Optional: signed initial-temperature error (slide 44)
+    ## Optional: signed initial-temperature error (slide 49)
 
-    This supplied extension is **not Task F** and lies outside the core timing.
-    Plan using $T_0^{measured}=20+e_T$, with $e_T=[-1,-.5,0,.5,1]$°C. Replay every
-    fixed schedule from the same true 20°C using identical physics and disturbances.
-    No re-optimisation occurs during replay. Report lower and upper realised violations
-    and failed cases; exclude the initial point from endpoint comfort scores. This
-    isolates information error, not independent-plant validation or feedback control.
+    This supplied extension lies outside the core tasks and session timing. Plan
+    using $T_0^{measured}=20+e_T$, with $e_T=[-1,-.5,0,.5,1]$°C. Replay every fixed schedule
+    from the same true 20°C using identical physics and disturbances. Each replay
+    applies the complete fixed schedule. Report lower and upper realised
+    violations and failed cases; exclude the initial point from endpoint comfort
+    scores. The shared model and fixed actions isolate the effect of the
+    initial-temperature information error.
     ''')
     code('initial-error-case',r'''
     def simulate_temperature(electric_power_kw,initial_c=TRUE_T0):
@@ -972,28 +1205,31 @@ def make_notebook(solution=False):
     save_figure(fig,"F71-09",counts="10 planned cases: 2 comfort policies x 5 signed errors; failures retained")
     ''')
     md('error-interpretation',r'''
-    Read positive error as an initially warm reading. Compare both signs using both
-    lower and upper realised discomfort alongside bill and energy. A hard predicted
-    bound need not hold in true-state replay; no error sign must worsen every outcome.
-    The common true initial state and fixed actions are retained throughout replay.
+    Read positive error as an initially warm reading. Compare both signs using
+    both lower and upper realised discomfort alongside bill and energy. A replay
+    can violate a comfort bound that the predicted trajectory satisfies. The
+    effect of each error sign depends on the schedule and metric. The common true
+    initial state and fixed actions are retained throughout replay.
     ''')
     md('optional',r'''
-    ## Optional: tracking and terminal treatment (slides 45–46)
+    ## Optional: tracking and terminal treatment (slides 50–51)
 
-    **Quadratic tracking:** $J_{track}=\Delta t\sum_k(T_{k+1}-T_{ref,k})^2$ has units
-    °C² h. Nonnegative weights on squared affine terms preserve convexity; with affine
-    constraints this gives a convex QP. A weight in £/(°C² h) can combine tracking with
-    bill. A target is distinct from a permitted band. No further core task is required.
+    **Quadratic tracking:** $J_{track}=\Delta t\sum_k(T_{k+1}-T_{ref,k})^2$ has units °C² h. Nonnegative weights
+    on squared affine terms preserve convexity; with affine constraints this gives
+    a convex QP. A weight in £/(°C² h) can combine tracking with bill. A target is
+    distinct from a permitted band. This remains an optional extension.
 
     **Terminal treatment:** the core applies comfort at the final boundary without
     assigning value to later stored heat. A longer horizon, terminal cost or extra
-    target changes the formulation and may change feasibility. Hold terminal treatment
-    common across comparisons; do not quietly add $T_N=T_0$.
+    target changes the formulation and may change feasibility. Hold terminal
+    treatment common across comparisons. Adding $T_N=T_0$ creates an
+    additional constraint.
 
-    An optional secondary optimisation among minimum-peak schedules must declare its
-    priority and tolerance explicitly. No tie-breaking objective is used here.
-    A separate independent-plant comparison would require a declared plant, common
-    realised inputs and initial states; it is not implemented in this session.
+    An optional secondary optimisation among minimum-peak schedules must declare
+    its priority and tolerance explicitly. The current solve uses peak power as
+    its sole objective. A separate independent-plant comparison would require a
+    declared plant, common realised inputs and initial states, extending the
+    shared-model comparisons here.
     ''')
     code('manifest',r'''
     if EXPORT_ARTEFACTS:
@@ -1008,7 +1244,7 @@ def make_notebook(solution=False):
         (OUTPUT_DIR/"model_and_case_provenance.json").write_text(json.dumps(provenance,indent=2),encoding="utf8")
     ''')
     md('references',r'''
-    ### References and source credits (slide 43)
+    ### References and source credits (slide 48)
 
     - [Reference data/model README](data/reference_building/README.md): supplied synthetic teaching case.
     - Boyd, S. and Vandenberghe, L. (2004), *Convex Optimization*, Cambridge University Press.
@@ -1027,9 +1263,11 @@ def build():
         writer=csv.writer(stream);writer.writerow(['task_id','slide','minutes_including_debrief','cell_id'])
         for letter,slide,minutes in TASKS:writer.writerow([letter,slide,minutes,'w71-task-'+letter.lower()])
     with (teaching/'week7_day1_schedule.csv').open('w',newline='',encoding='utf8') as stream:
-        writer=csv.writer(stream);writer.writerow(['slide','core_minutes','block'])
-        for slide,minutes in enumerate(SLIDE_MINUTES,1):writer.writerow([slide,minutes,1 if slide<=11 else 2 if slide<=21 else 3 if slide<=31 else 4])
-    print('Built Tutorial 7.1 pair only: six tasks, 62 task minutes within 200 teaching minutes; optional topics separate.')
+        writer=csv.writer(stream);writer.writerow(['slide','core_minutes','block','role'])
+        for slide,minutes in enumerate(SLIDE_MINUTES,1):writer.writerow([slide,minutes,1 if slide<=11 else 2 if slide<=21 else 3 if slide<=33 else 4,'Core'])
+        writer.writerow([45,0,0,'References'])
+        for slide in [46,47,48]:writer.writerow([slide,0,0,'Optional'])
+    print('Built Tutorial 7.1 pair only: six tasks, 63 task minutes within 200 teaching minutes; optional topics separate.')
 
 
 if __name__=='__main__':build()

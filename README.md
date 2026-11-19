@@ -33,6 +33,13 @@ Both notebooks are self-contained and use the existing environment. Worked noteb
 
 Run both notebooks from the repository root. The required inputs are in `data/reference_building` and `data/tutorial_6_2`; the worked solutions are released separately.
 
+## Week 7
+
+- [Tutorial 7.1: Optimisation for building operation](tutorial_7_1_building_optimisation.ipynb): formulate heating schedules, compare tariffs and a thermostat, and examine comfort penalties and peak power. [Worked solution](tutorial_7_1_building_optimisation_solution.ipynb).
+- [Tutorial 7.2: Dynamic optimisation and flexible building assets](tutorial_7_2_flexible_building_assets.ipynb): add PV and battery storage, then compare operating cost, grid exchange and comfort. [Worked solution](tutorial_7_2_flexible_building_assets_solution.ipynb).
+
+Run from the repository root using the supplied environment and inputs in `data/reference_building`. Student notebooks retain the coding and written-response exercises; worked notebooks contain completed code and results.
+
 ## Generated files
 
 Saved lecture plots, forecast tables, checkpoints, manifests, validation reports and teaching archives are local artifacts excluded from Git. Required input datasets, provenance, notebook illustrations and source scripts are versioned. Running a notebook may regenerate outputs; set `EXPORT_ARTEFACTS = False` where available to display results without exporting them.
