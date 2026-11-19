@@ -7,8 +7,9 @@ import nbformat as nbf
 ROOT = Path(__file__).resolve().parents[1]
 STEM = 'tutorial_6_2_rc_model_identification'
 TASKS = [('A','I1',7,12),('B','I2',13,12),('C','I3',15,8),
-         ('D','I4',19,12),('E','I5',21,8),('F','I6',25,12)]
-SLIDE_MINUTES = [3,3,6,5,6,5,12,5,5,6,5,5,12,6,8,8,5,5,12,6,8,4,5,5,12,6,8,8,6,5,5]
+         ('D','I4',19,12),('E','I5',21,8),
+         ('R1','I7',25,10),('R2','I7',27,15),('R3','I7',29,15)]
+SLIDE_MINUTES = [3,3,6,5,6,5,12,5,5,6,5,5,12,6,8,8,5,5,12,6,8,4,5,5,10,3,15,2,15,3,2]
 TEACHING_BLOCKS = [(1,9),(10,16),(17,24),(25,31)]
 FIGURES = [
  ('F62-01','w6d2_F01_identification_data','4','I0','1344 observations; 28 days','Synthetic temperatures, useful heat and solar input; first 21 days fit, last seven validate.'),
@@ -19,9 +20,9 @@ FIGURES = [
  ('F62-06','w6d2_F06_validation_trajectories','20','I4','335 scored targets; 336 plotted observations','Seven-day conditional validation with the initial state excluded from scores.'),
  ('F62-07','w6d2_F07_validation_scores','22','I5','335 common targets per method','Actual-minus-predicted scores; one-step and seven-day rollout use different information sets.'),
  ('F62-08','w6d2_F08_residual_diagnostics','24','I6','335 one-step residuals','Observed-minus-predicted residuals at the temperature observation time, paired with heating input during the preceding interval; associations are diagnostic, not causal proof.'),
- ('F62-09','w6d2_F09_horizon_validation','26','I6','6 origins; 48 leads; 288 origin-target pairs','Left: RMSE at each lead across six origins. Blue uses updated measured states for repeated one-step predictions, not a 24 h forecast issued at midnight; orange initialises only at midnight. Both agree at 0.5 h. Right: rollout RMSE over all targets in each first 6/12/24 h window. Recorded future inputs condition both protocols.'),
- ('F62-10','w6d2_F10_measured_house_transfer','28','I7','720 observations per period; valid counts computed','Ten-minute one-step predictions and segmented rollouts with a frozen November fit. November scores are in-sample; June uses unchanged coefficients. Markers identify restarts after missing-input gaps, not an uninterrupted five-day forecast. Segment lengths differ, so this is not a common-horizon comparison. Electricity-plus-gas power is a useful-heat proxy; parameters are effective.'),
- ('F62-11','w6d2_F11_fit_period_sensitivity','35 (optional)','E3','4 fitting windows; valid counts computed','Same predictors, bounds and original-observation masks across estimation windows. Effective parameters may vary with input variation, correlations, omitted gains and noise; this does not establish changing fabric. June refit (post-hoc) is distinct from frozen-model June evaluation; bars are estimates, not confidence intervals.'),
+ ('F62-10','w6d2_F10_measured_house_transfer','30','I7','Common June hold-out targets','Ten-minute one-step predictions with November and June coefficients on identical held-out June observations.'),
+ ('F62-11','w6d2_F11_fit_period_sensitivity','28','I7','Two fitting periods','Same three predictors and coefficient bounds fitted to November and June training measurements; estimates describe training-period sensitivity.'),
+ ('F62-12','w6d2_F12_house_measurements','26','I7','720 observations per period','Original indoor/outdoor temperatures, total power and solar irradiance; missing readings retained.'),
 ]
 
 
@@ -29,18 +30,19 @@ def make_notebook(solution=False):
     cells=[]
     def md(key,source):cells.append(nbf.v4.new_markdown_cell(textwrap.dedent(source).strip(),id='w62-'+key))
     def code(key,source,tags=None):cells.append(nbf.v4.new_code_cell(textwrap.dedent(source).strip(),id='w62-'+key,metadata={'tags':tags or ['supplied']}))
-    def task(letter,answer,scaffold,optional=False):
-        code('task-'+letter.lower(),answer if solution else scaffold,['optional_task' if optional else 'task',letter])
+    def task(letter,answer,scaffold):
+        code('task-'+letter.lower(),answer if solution else scaffold,['task',letter])
 
     md('purpose',r'''
     # Tutorial 6.2: RC model identification and validation
 
-    In this tutorial, we fit effective thermal parameters, then test one-step and free
-    rollout behaviour on later observations. A supplied real-house demonstration
-    and optional exercises provide a case with real-world measurement data.
+    We first fit an RC model to synthetic measurements and compare one-step
+    predictions with a free rollout. We then fit two models to occupied-house
+    measurements, compare their coefficients and test seasonal transfer.
 
     **Outcomes:** align transitions; fit bounded coefficients; recover effective
-    $R,C$ and time constant parameter values; compare common-target errors; diagnose horizon limits.
+    $R,C$ and time constant values; include effective solar gains; compare
+    seasonal coefficients and predictions on a shared summer hold-out.
 
     | Block | Slides | Minutes | Focus |
     |---|---|---:|---|
@@ -48,34 +50,49 @@ def make_notebook(solution=False):
     | 2 | 10–16 | 50 | Estimation and Tasks B–C |
     | Break | after 16 | 15–20 additional | Save and pause |
     | 3 | 17–24 | 50 | Validation and Tasks D–E |
-    | 4 | 25–31 | 50 | Task F, real-data transfer and handover |
+    | 4 | 25–31 | 50 | Real-house experiment: Tasks R1–R3 |
 
-    The six tasks total 64 minutes within 200 teaching minutes. Optional E1–E4
-    take about 35–45 minutes outside the core. All plots are supplied. Run from
-    the repository root; no earlier tutorial, saved predictions or download is needed.
+    Tasks A–E take 52 minutes; Tasks R1–R3 take 40 minutes within the
+    200-minute session. All plots are supplied. Run from the repository root
+    using the local datasets and the course Python environment.
     ''')
     md('i0',r'''
     ## I0. Data, units and purpose (slides 3–4)
 
+    In Week 5, calibration adjusted uncertain EnergyPlus inputs to improve
+    agreement with operational data. Here, system identification estimates RC
+    model coefficients from temperature and heating data.
+
     The frozen [reference data](data/reference_building/README.md) contain 28 days
     of noisy synthetic indoor measurements at 30-minute intervals. The row at
     $t_k$ contains measured $T_k$, outdoor $T_{o,k}$ and useful heat $q_{th,k}$;
-    the latter inputs drive $T_k\rightarrow T_{k+1}$. The last row has no observed
-    next target. The separate fabric state is not an identification input.
+    latter inputs act during the interval from $t_k$ to $t_{k+1}$.
 
-    Fit $\Delta T_k=b(T_{o,k}-T_k)+cq_{th,k}+\epsilon_k$, without an intercept.
-    Use kW, hours, K/kW, kWh/K and °C. Solar/internal gains and extra plant states
-    are omitted. Noise in $T_k$ enters both the predictor and differenced target:
-    bounded least squares is not an unbiased physical-parameter estimator.
-    The supplied generator uses sensor noise σ=0.06°C and process noise
-    σ=0.012°C per air-state interval (one third for fabric). These are simulator
-    settings, not fitted error variances; the heat signal also responds to temperature limits.
+    The one-state energy balance and its forward-Euler discretisation are
+
+    $$C\frac{dT}{dt}=\frac{T_o-T}{R}+q_{th},$$
+
+    $$\Delta T_k:=T_{k+1}-T_k=b(T_{o,k}-T_k)+cq_{th,k}+\epsilon_k,
+    \qquad b=\frac{\Delta t}{RC},\quad c=\frac{\Delta t}{C}.$$
+
+    Here $R$ is in K/kW, $C$ in kWh/K, $\Delta t=0.5$ h, temperatures in °C
+    and heat input in kW. The residual $\epsilon_k$ includes measurement noise
+    and dynamics omitted by the fitted model. We fit the two coefficients with
+    the intercept fixed at zero. Section I7 adds an explicit solar-gain term.
+
+    The supplied synthetic generator has two thermal states, solar/internal
+    gains and temperature-dependent heating. Its air sensor noise has standard
+    deviation 0.06°C; process noise has standard deviation 0.012°C per air-state
+    interval and one third of this value for the fabric state. We use indoor
+    measurements and recorded inputs to fit the simpler one-state model.
+    Measurement noise in $T_k$ enters both the predictor and the target, so
+    least-squares estimates can differ from physical fabric parameters.
 
     We keep the synthetic core for a controlled timing example. The real-house
     measurements are already supplied locally in `data/tutorial_6_2`; see the
     [local data README](data/tutorial_6_2/README.md) and
     [Hollick and Wingfield (2018), dataset DOI](https://doi.org/10.14324/000.ds.10087216).
-    This notebook provides the complete transfer demonstration before optional work.
+    Section I7 develops the seasonal experiment as part of the main tutorial.
     ''')
     code('setup','''
     from pathlib import Path
@@ -224,8 +241,21 @@ def make_notebook(solution=False):
     y_fit=fit_transitions.temperature_change_c.to_numpy()
     ''','''
     transition_tables={}
-    # TODO A: form next-time/temperature, changes and differences WITHIN each period.
-    # Keep finite, consecutive transitions; build X_fit, y_fit and both transition tables.
+    for label, observations in [("fit", fit_observations), ("validation", validation_observations)]:
+        table = observations[required].copy()
+        table["predictor_time"] = observations.index
+        table["target_time"] = observations.index.to_series().shift(-1)
+        # TODO A: obtain next_temperature_c using shift(-1), then form the two differences.
+        table["next_temperature_c"] = np.nan
+        table["temperature_change_c"] = np.nan
+        table["temperature_difference_c"] = np.nan
+        finite = np.isfinite(table[required + ["next_temperature_c"]]).all(axis=1)
+        consecutive = (table.target_time - table.predictor_time).eq(pd.Timedelta(hours=dt))
+        transition_tables[label] = table.loc[finite & consecutive].copy()
+    fit_transitions = transition_tables["fit"]
+    validation_transitions = transition_tables["validation"]
+    FEATURE_COLUMNS = ["temperature_difference_c", "delivered_heat_kw"]
+    # TODO A: extract X_fit and y_fit from fit_transitions as NumPy arrays.
     raise NotImplementedError("Task A: align the within-period half-hour transitions.")
     ''')
     code('transition-results','''
@@ -259,12 +289,13 @@ def make_notebook(solution=False):
 
     The supplied unconstrained fit minimises $\|X\theta-y\|^2$ on fitting rows
     only, where $\theta=[b,c]^T$. Use the **same X,y** for the bounded fit.
-    Bounds $b\in[10^{-5},0.4]$ and $c\in[10^{-5},0.5]$ are broad teaching
-    assumptions at dt=0.5 h; c has K/kW units. They are not confidence intervals.
+    Bounds $b\in[10^{-5},0.4]$ and $c\in[10^{-5},0.5]$ specify the allowed
+    coefficient range at $\Delta t=0.5$ h; $c$ has K/kW units.
     $0<b\leq1$ gives non-oscillatory Euler relaxation; stability permits $0<b<2$.
 
-    Complete `lsq_linear`, check success and obtain b,c. Do not change the bounds
-    or inputs to force a contrast with OLS.
+    Complete `lsq_linear`, check success and obtain $b,c$. Compare the two
+    fits using the supplied bounds and inputs. Equal coefficients are a valid
+    result when the unconstrained estimate lies inside the bounds.
     ''')
     code('ols','''
     ols_coefficients=np.linalg.lstsq(X_fit,y_fit,rcond=None)[0]
@@ -304,9 +335,11 @@ def make_notebook(solution=False):
     ## I3. Task C — effective parameters (slide 15; 8 min)
 
     Recover $C=dt/c$, $R=c/b$ and $\tau=dt/b$; also calculate $a=1-b$.
-    These formulae assume Euler coefficients and **useful heat** as input.
-    They do not directly invert exact-discrete or electricity-proxy coefficients.
-    Record units and explain why these are effective model parameters.
+    These formulae assume forward Euler and **useful heat** as input.
+    Record units and explain how omitted gains and sensor noise affect the estimates.
+
+    Check your expressions with $b=0.025$, $c=0.125$ K/kW and $dt=0.5$ h:
+    $C=4$ kWh/K, $R=5$ K/kW, $\tau=20$ h and $a=0.975$.
     ''')
     task('C','''
     estimated_C=dt/c
@@ -324,9 +357,10 @@ def make_notebook(solution=False):
     print("Separate hand example, not the fit: b=.025,c=.125,dt=.5 gives R=5,C=4,tau=20,a=.975.")
     ''')
     md('break',r'''
-    A plausible fit does not establish unique fabric properties. Correlated
-    inputs, closed-loop operation, measurement noise and omitted gains can alter
-    the coefficients. **Save and take the 15–20-minute break after slide 16.**
+    Correlated inputs, heating control, measurement noise and omitted gains
+    affect the estimated coefficients. Interpret the recovered $R,C$ as
+    effective values for this model and fitting period.
+    **Save and take the 15–20-minute break after slide 16.**
     ''')
     md('i4',r'''
     ## I4. Prediction protocols (slides 17–20)
@@ -334,8 +368,9 @@ def make_notebook(solution=False):
     Freeze b,c. One-step prediction starts from measured $T_k$ at every interval.
     Free rollout starts once at the first validation observation and uses its own
     previous prediction thereafter. Both receive the recorded useful heat and
-    outdoor inputs: this is **ex-post conditional validation**, not an operational
-    forecast with genuinely issued future-weather predictions.
+    outdoor inputs. The errors therefore describe performance conditional on
+    these observed inputs. Operational forecasting also requires forecasts of
+    future inputs.
     ''')
     code('protocol-diagram',r'''
     fig,axes=plt.subplots(2,1,figsize=(12,4.3))
@@ -356,8 +391,8 @@ def make_notebook(solution=False):
 
     Complete the one-step expression and a short rollout recurrence. Retain the
     initial point for plotting, but index scored predictions at the 335 target
-    times only (27 January 00:30 to 2 February 23:30). Do not reset the rollout
-    from any later measured indoor state.
+    times only (27 January 00:30 to 2 February 23:30). At each subsequent step,
+    use the previous predicted indoor temperature in the rollout recurrence.
     ''')
     task('D','''
     target_index=pd.DatetimeIndex(validation_transitions.target_time,name="target_time")
@@ -372,8 +407,17 @@ def make_notebook(solution=False):
     rollout=rollout_states.iloc[1:].rename_axis("target_time")
     actual=pd.Series(validation_transitions.next_temperature_c.to_numpy(),index=target_index,name="actual_c")
     ''','''
-    # TODO D: predict from measured T for one-step; initialise once and recur for rollout.
-    # Assign one_step, rollout and actual to target_index; keep rollout_states for plotting.
+    target_index = pd.DatetimeIndex(validation_transitions.target_time, name="target_time")
+    # TODO D: fill the one-step prediction from the measured current temperature.
+    one_step = pd.Series(np.nan, index=target_index, name="one_step_c")
+    rollout_values = np.empty(len(validation_observations))
+    rollout_values[0] = validation_observations.indoor_temperature_c.iloc[0]
+    for k in range(len(validation_observations) - 1):
+        # TODO D: use rollout_values[k], outdoor temperature and useful heat.
+        rollout_values[k + 1] = np.nan
+    rollout_states = pd.Series(rollout_values, index=validation_observations.index, name="rollout_c")
+    rollout = rollout_states.iloc[1:].rename_axis("target_time")
+    actual = pd.Series(validation_transitions.next_temperature_c.to_numpy(), index=target_index, name="actual_c")
     raise NotImplementedError("Task D: align both predictions on targets, excluding initialisation from scores.")
     ''')
     code('validation-plots','''
@@ -404,8 +448,9 @@ def make_notebook(solution=False):
     Use the supplied familiar metric helper with error = actual − prediction.
     Positive bias means underprediction. Complete the three score rows on the
     identical 335 targets. Persistence uses measured $T_k$ and is a **one-step**
-    benchmark; the seven-day rollout has a different information set. Do not rank
-    these as equivalent forecasting methods. MAPE is unsuitable for Celsius temperatures.
+    benchmark; the seven-day rollout uses only the initial indoor measurement.
+    Compare the two one-step methods directly, then assess accumulated rollout
+    drift separately. Report temperature errors in K.
     ''')
     code('metrics','''
     def temperature_metrics(actual,prediction):
@@ -439,26 +484,18 @@ def make_notebook(solution=False):
     save_figure(fig,"F62-07",["data/reference_building/identification_data.csv"],"335 targets in 27 January–2 February 2025","K","Different information sets; no common forecast ranking","Task E metrics")
     ''')
     md('i6',r'''
-    ## I6. Residuals and horizon evidence (slides 23–26)
+    ## I6. Residual diagnostics (slides 23–24)
 
-    Pair $e_{k+1}=T_{k+1}-\hat T_{k+1}$ with heating input during interval $k$
-    and outdoor temperature at predictor time: $q_{th,k},T_{o,k}$. For
-    10:00→10:30, compare the temperature error at 10:30 with the inputs for
-    10:00→10:30, not the inputs for the next interval. Positive residuals mean
-    underprediction. These associations suggest model diagnostics; they do not
-    prove that a plotted input caused the error. Keep both timestamps.
+    A residual is the observed temperature minus its prediction:
+    $e_{k+1}=T_{k+1}-\hat T_{k+1}$. Positive residuals indicate underprediction.
+    Pair each residual with the inputs during the preceding interval. For
+    example, the error at 10:30 corresponds to the heating input from
+    10:00 to 10:30 and the outdoor temperature recorded at 10:00.
 
-    An **origin** is the prediction start time; **lead** is elapsed time from
-    origin to target; **horizon** is the prediction-window length evaluated.
-    **Initialisation** sets the predicted indoor state to its measured value
-    at the origin; it does not refit coefficients. Start once per day at midnight
-    on 27 January–1 February. At each origin, one 48-step rollout supplies the
-    first 12, 24 and 48 targets for 6, 12 and 24 h windows, with no extra reset
-    at 6 or 12 h. All origins use the same fitted coefficients.
-
-    Recorded later outdoor temperature and useful heat are ex-post conditioning
-    inputs, not operational forecasts. Later indoor measurements enter only the
-    explicitly labelled repeated one-step benchmark, never the free rollout.
+    Inspect the residual time series, its association with heating power and
+    its distribution by hour. Which pattern suggests an omitted heat gain or
+    additional thermal dynamics? These plots describe associations; causal
+    interpretation requires further evidence.
     ''')
     code('residuals','''
     residual_records=validation_record[["predictor_time","target_time","delivered_heat_kw","outdoor_temperature_c","one_step_residual_c"]].copy()
@@ -477,482 +514,356 @@ def make_notebook(solution=False):
     for ax in [ax0,ax1,ax2]:ax.axhline(0,color="black",lw=1,linestyle="--")
     save_figure(fig,"F62-08",["data/reference_building/identification_data.csv"],"Validation period","K;kW;hour","One-step residual; heating input during the preceding interval")
     ''')
-    code('horizon-experiment','''
-    # Origins depend on available complete 24 h windows, never on observed errors.
-    midnight=validation_observations.index[(validation_observations.index.hour==0)&(validation_observations.index.minute==0)]
-    origins=[t for t in midnight if t+pd.Timedelta(hours=24)<=validation_observations.index[-1]]
-    horizon_rows=[]
-    for origin in origins:
-        position=validation_observations.index.get_loc(origin)
-        predicted=float(validation_observations.indoor_temperature_c.loc[origin])
-        for lead in range(1,49):
-            row=validation_observations.iloc[position+lead-1]
-            predicted=predicted+b*(row.outdoor_temperature_c-predicted)+c*row.delivered_heat_kw
-            # Separate benchmark: a new measured-state prediction at every interval.
-            measured_T_k=row.indoor_temperature_c
-            one_step_prediction=measured_T_k+b*(row.outdoor_temperature_c-measured_T_k)+c*row.delivered_heat_kw
-            target_time=validation_observations.index[position+lead]
-            observed=validation_observations.indoor_temperature_c.loc[target_time]
-            horizon_rows.append({"origin":origin,"lead_steps":lead,"lead_hours":lead*dt,
-                "predictor_time":row.name,"target_time":target_time,"actual_c":observed,
-                "prediction_c":predicted,"error_c":observed-predicted,
-                "one_step_prediction_c":one_step_prediction,"one_step_error_c":observed-one_step_prediction})
-    horizon_records=pd.DataFrame(horizon_rows)
-    export_table(horizon_records,"multi_origin_records.csv")
-    # Illustration only: three nested windows from the first midnight origin.
-    first_origin_windows=pd.DataFrame({"start":[origins[0]]*3,"horizon_hours":[6,12,24],
-        "end":[origins[0]+pd.Timedelta(hours=h) for h in [6,12,24]],"N_targets":[12,24,48]})
-    display(first_origin_windows)
-    ''')
-    md('task-f-text','''
-    ### Task F — aggregate horizon error and judge adequacy (slide 25; 12 min)
-
-    The supplied loop uses six complete midnight origins, 27 January–1 February.
-    Complete RMSE by lead from `horizon_records.error_c`. Keep all six origins
-    for every lead: this is lead-specific RMSE across origins. The supplied next
-    cell also reports window RMSE over all targets in each origin's first H hours,
-    rather than only its endpoint. Use the result to state a useful horizon, one limitation and
-    one next check; no universal acceptable RMSE threshold is supplied.
-    ''')
-    task('F','''
-    lead_rmse=horizon_records.groupby("lead_hours").error_c.apply(lambda e:np.sqrt(np.mean(e**2))).rename("RMSE_K")
-    ''','''
-    # TODO F: group error_c by lead_hours and calculate RMSE for each lead.
-    raise NotImplementedError("Task F: aggregate errors over the same six origins at every lead.")
-    ''')
-    code('horizon-plot','''
-    window_rows=[]
-    for origin,group in horizon_records.groupby("origin"):
-        for hours in [6,12,24]:
-            window=group.loc[group.lead_hours<=hours]
-            window_rows.append({"origin":origin,"horizon_hours":hours,"N":len(window),
-                                "RMSE_K":np.sqrt(np.mean(window.error_c**2))})
-    window_scores=pd.DataFrame(window_rows)
-    lead_summary=pd.concat([lead_rmse,horizon_records.groupby("lead_hours").size().rename("N_origins")],axis=1)
-    # Apply the completed Task F pattern to the separate measured-state benchmark.
-    one_step_lead_rmse=horizon_records.groupby("lead_hours").one_step_error_c.apply(lambda e:np.sqrt(np.mean(e**2))).rename("one_step_RMSE_K")
-    benchmark_lead_summary=pd.concat([lead_summary,one_step_lead_rmse],axis=1)
-    display(lead_summary.iloc[[0,11,23,47]]);display(window_scores)
-    export_table(lead_summary,"lead_scores.csv",index=True);export_table(window_scores,"window_scores.csv")
-    export_table(benchmark_lead_summary,"one_step_benchmark_lead_scores.csv",index=True)
-    fig,axes=plt.subplots(1,2,figsize=(12,5.5))
-    axes[0].plot(one_step_lead_rmse.index,one_step_lead_rmse,color=COLOURS["one_step"],label="One-step: updated measured state")
-    axes[0].plot(lead_rmse.index,lead_rmse,color=COLOURS["rollout"],label="Rollout: midnight initialisation")
-    axes[0].set(xlabel="Hours since midnight start",ylabel="RMSE (K)",xlim=(.5,24),title="One-step and rollout error by lead")
-    legend_above(axes[0],1);axes[0].set_title(axes[0].get_title(),pad=65)
-    for hours,group in window_scores.groupby("horizon_hours"):
-        axes[1].plot(group.origin,group.RMSE_K,"o-",label=f"{hours} h / {int(hours/dt)} targets")
-    axes[1].set(ylabel="RMSE over first H hours (K)",xlabel="Prediction start (midnight)",title="Rollout error over each prediction window")
-    legend_above(axes[1],1);axes[1].set_title(axes[1].get_title(),pad=65);time_axis(axes[1])
-    save_figure(fig,"F62-09",["data/reference_building/identification_data.csv"],"Origins 27 January–1 February 2025","K;h","Fixed fitted model; recorded future inputs","Task F lead aggregation")
-    ''')
-    md('horizon-discussion','''
-    **Interpret:** distinguish the seven-day drift diagnostic from the shorter
-    horizon tests. In F62-09, blue comprises repeated one-step predictions using
-    updated measured states, not a 24 h forecast issued at midnight. Orange uses
-    only the midnight indoor measurement. Both agree at lead 0.5 h because the
-    initial state and first inputs coincide. Neither error curve must increase
-    monotonically. The left panel pools six origins at each lead; the right
-    scores every target within each origin's first H hours, not its endpoint alone.
-    The 6/12/24 h windows reuse targets within each origin, so
-    horizon scores are dependent. The selected midnight 24 h windows do not
-    overlap one another's target sets, but consecutive days need not be independent.
-    Any model revision based on these results needs new final evaluation data.
-    ''')
     md('i7',r'''
-    ## I7. Supplied real-house transfer (slides 27–28; 8 min each)
+    ## I7. Real-house experiment: November and June (slides 25–31)
 
-    These are occupied-house measurements: 11–15 November 2016 and 10–14 June
-    2017, 720 observations each at 10 minutes. Source:
-    [Hollick and Wingfield (2018), UCL Discovery](https://discovery.ucl.ac.uk/id/eprint/10087216/).
-    The files are provided in `data/tutorial_6_2`; see the
-    [local data README](data/tutorial_6_2/README.md). The one-step horizon is
-    **10 minutes**. November is the fitting period, so its scores are in-sample
-    diagnostics; June uses unchanged November coefficients before any June refit.
+    We now fit a 1R1C model to measurements from an occupied house. Real
+    measurements vary with weather and occupancy, and the available power
+    signal approximates the heat entering the building. A single indoor temperature simplifies
+    the thermal behaviour of several rooms and the building fabric. We will
+    inspect these limitations and examine how the training period affects the
+    fitted coefficients and predictions.
 
-    Use $\Delta T=b(T_o-T)+cP^{proxy}+gS^{proxy}$ with no intercept.
-    Convert `P_tot` W→kW and solar W/m²→kW/m². Electricity plus gas power is
-    **not delivered useful space-heating output**. R,C recovered under that proxy
-    assumption are effective, not identified fabric properties.
+    The local files contain 11–15 November 2016 and 10–14 June 2017, each with
+    720 observations at 10-minute intervals. See the
+    [data README](data/tutorial_6_2/README.md) and
+    [Hollick and Wingfield (2018)](https://doi.org/10.14324/000.ds.10087216).
 
-    Fit on originally observed November transitions only. Apply the fixed model
-    to June before any June refit. Main scores use originally observed current
-    and target temperatures and finite original forcing inputs. A missing forcing
-    interval ends a rollout segment; the next supported segment starts explicitly
-    from a measured temperature. Missing temperature targets alone do not reset it.
-    These are segmented rollouts, not one uninterrupted five-day forecast.
-    Markers identify each restart. Accurate one-step predictions can coexist
-    with rollout drift, but segment lengths differ: this plot does not directly
-    establish a common 6/12/24 h horizon effect. Use I6 for that comparison.
-    No interpolation is used in the headline example. Optional E1 tests a limited
-    input-imputation assumption separately. The demonstration needs no optional TODO.
-    To explore real data alone, run setup, plotting helpers, the metric-function
-    cell and this section; the synthetic fitting tasks are not dependencies.
+    1. Inspect the temperature, power and irradiance signals.
+    2. Fit the same model to November and the first three days of June.
+    3. Compare the coefficients and effective parameters.
+    4. Test both models on the final two days of June.
 
-    The data, estimation period and model assumptions affect effective R,C.
-    Optional E3 compares fitting windows without changing this frozen-model
-    evaluation; it does not by itself establish changing physical fabric.
+    The June test observations are held out from both fits. November contributes
+    five fitting days and June contributes three; report the training row counts
+    alongside the coefficients. The comparison describes sensitivity to these
+    training datasets, including their different lengths and operating conditions.
+
+    This section can also run independently: execute setup, supplied plotting
+    helpers, the metric-function cell, and I7. The student tasks in I7 use only
+    the house measurements.
     ''')
     code('house-data','''
-    HOUSE_COLUMNS=["T_Average (degC)","T_External (degC)","P_tot (W)","Solar (W/m2)"]
-    house_raw={}
-    house_original_masks={}
-    house_audit_rows=[]
-    for name,filename in [("November","10mins_solpap_2016.csv"),("June","10mins_solpap_2017.csv")]:
-        raw=pd.read_csv(ROOT/"data/tutorial_6_2"/filename,index_col=0)
-        raw.index=pd.to_datetime(raw.index,format="%d/%m/%Y %H:%M")
-        if raw.index.has_duplicates or not raw.index.equals(pd.date_range(raw.index[0],periods=len(raw),freq="10min")):
-            raise ValueError("Inspect irregular or duplicate measured-house timestamps before continuing.")
-        house_raw[name]=raw.copy(deep=True)
-        mask=pd.DataFrame(np.isfinite(raw[HOUSE_COLUMNS]),index=raw.index,columns=HOUSE_COLUMNS)
-        house_original_masks[name]=mask
-        export_table(mask.rename_axis("observation_time"),f"house_{name.lower()}_original_masks.csv",index=True)
-        for column in HOUSE_COLUMNS:
-            missing=~mask[column]
-            groups=missing.ne(missing.shift()).cumsum()
-            lengths=missing.loc[missing].groupby(groups[missing]).size()
-            house_audit_rows.append({"period":name,"column":column,"rows":len(raw),"missing":int(missing.sum()),
-                                    "longest_gap_steps":int(lengths.max()) if len(lengths) else 0})
-    house_audit=pd.DataFrame(house_audit_rows)
-    display(house_audit);export_table(house_audit,"house_data_audit.csv")
-    fig,axes=plt.subplots(3,2,figsize=(12,7),sharex="col")
-    for col,(name,raw) in enumerate(house_raw.items()):
-        axes[0,col].plot(raw.index,raw[HOUSE_COLUMNS[0]],color="black",label="Indoor")
-        axes[0,col].plot(raw.index,raw[HOUSE_COLUMNS[1]],color="0.5",label="Outdoor")
-        axes[0,col].set_title(name);axes[0,col].legend(fontsize=9,ncol=2)
-        axes[1,col].plot(raw.index,raw[HOUSE_COLUMNS[2]]/1000,color="tab:orange")
-        axes[2,col].plot(raw.index,raw[HOUSE_COLUMNS[3]],color="tab:green");time_axis(axes[2,col])
-        for ax in axes[:,col]:ax.tick_params(axis="x",labelbottom=False)
-        axes[2,col].tick_params(axis="x",labelbottom=True)
-        axes[2,col].xaxis.set_major_locator(mdates.DayLocator())
-        axes[2,col].xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
-        axes[2,col].set_xlabel("Observation date")
-    axes[0,0].set_ylabel("Temperature (°C)");axes[1,0].set_ylabel("Power proxy (kW)");axes[2,0].set_ylabel("Solar (W/m²)")
-    fig.tight_layout()
-    if EXPORT_ARTEFACTS and (EXTRA_EXPORT_NAMES is None or "extra_house_raw_signals" in EXTRA_EXPORT_NAMES):
-        FIGURE_DIR.mkdir(parents=True,exist_ok=True)
-        for ext in ["png","svg"]:fig.savefig(FIGURE_DIR/f"extra_house_raw_signals.{ext}",dpi=220,bbox_inches="tight")
-    if EXPORT_ARTEFACTS:
-        house_source_files=["data/tutorial_6_2/10mins_solpap_2016.csv","data/tutorial_6_2/10mins_solpap_2017.csv"]
-        pd.DataFrame([{"slide":27,"png":"figures/week6_day2/extra_house_raw_signals.png",
-            "svg":"figures/week6_day2/extra_house_raw_signals.svg",
-            "source_files":";".join(house_source_files),
-            "source_sha256":";".join(hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in house_source_files),
-            "caption":"Original November and June measurements: indoor/outdoor temperature, electricity-plus-gas power proxy and solar irradiance; missing observations retained."}]).to_csv(ROOT/"teaching/week6_day2_supplemental_placements.csv",index=False)
-    plt.show();plt.close(fig)
-    ''')
-    code('house-transitions','''
-    # Supplied transfer demonstration; independent of the synthetic student fit.
-    house_tables={}
-    HOUSE_FEATURES=["temperature_difference_c","power_proxy_kw","solar_proxy_kw_m2"]
-    HOUSE_LOWER=np.array([1e-6,1e-6,0.]);HOUSE_UPPER=np.array([.2,.5,2.])
-    for name,raw in house_raw.items():
-        table=pd.DataFrame(index=raw.index)
-        table["predictor_time"]=raw.index
-        table["target_time"]=raw.index.to_series().shift(-1)
-        table["indoor_temperature_c"]=raw[HOUSE_COLUMNS[0]]
-        table["outdoor_temperature_c"]=raw[HOUSE_COLUMNS[1]]
-        table["power_proxy_kw"]=raw[HOUSE_COLUMNS[2]]/1000
-        table["solar_proxy_kw_m2"]=raw[HOUSE_COLUMNS[3]]/1000
-        table["next_temperature_c"]=table.indoor_temperature_c.shift(-1)
-        table["temperature_change_c"]=table.next_temperature_c-table.indoor_temperature_c
-        table["temperature_difference_c"]=table.outdoor_temperature_c-table.indoor_temperature_c
-        table["original_eligible"]=np.isfinite(table[["indoor_temperature_c","next_temperature_c","outdoor_temperature_c","power_proxy_kw","solar_proxy_kw_m2"]]).all(axis=1)&(table.target_time-table.predictor_time).eq(pd.Timedelta(minutes=10))
-        house_tables[name]=table.iloc[:-1].copy()
-    winter_transitions=house_tables["November"].loc[house_tables["November"].original_eligible]
-    house_fit=lsq_linear(winter_transitions[HOUSE_FEATURES].to_numpy(),winter_transitions.temperature_change_c.to_numpy(),bounds=(HOUSE_LOWER,HOUSE_UPPER))
-    if not house_fit.success:raise RuntimeError(house_fit.message)
-    house_coefficients=house_fit.x.copy()
-    house_model_record=pd.DataFrame([{"fit_period":"November only","N_fit":len(winter_transitions),
-        "b":house_coefficients[0],"c_proxy_K_per_kW":house_coefficients[1],"g_proxy":house_coefficients[2],
-        "R_proxy_K_per_kW":house_coefficients[1]/house_coefficients[0],
-        "C_proxy_kWh_per_K":(1/6)/house_coefficients[1],"tau_hours":(1/6)/house_coefficients[0],
-        "active_bounds":str(house_fit.active_mask.tolist())}])
-    display(house_model_record);export_table(house_model_record,"house_frozen_winter_model.csv")
-    ''')
-    code('house-predict','''
-    def predict_house_segments(table,coefficients):
-        """Propagate through observed inputs; mark every measured segment reset."""
-        result=table.copy()
-        result["one_step_c"]=result.indoor_temperature_c+result[HOUSE_FEATURES]@coefficients
-        result["rollout_c"]=np.nan
-        result["segment_id"]=-1
-        result["reset_at_predictor"]=False
-        predicted=np.nan;segment=-1
-        loss,power,solar=coefficients
-        for index,row in result.iterrows():
-            inputs=row[["outdoor_temperature_c","power_proxy_kw","solar_proxy_kw_m2"]].to_numpy(dtype=float)
-            if not np.isfinite(inputs).all():
-                predicted=np.nan
-                continue
-            if not np.isfinite(predicted):
-                if not np.isfinite(row.indoor_temperature_c):continue
-                predicted=float(row.indoor_temperature_c);segment+=1
-                result.loc[index,"reset_at_predictor"]=True
-            predicted=predicted+loss*(row.outdoor_temperature_c-predicted)+power*row.power_proxy_kw+solar*row.solar_proxy_kw_m2
-            result.loc[index,["rollout_c","segment_id"]]=[predicted,segment]
-        result["common_score_mask"]=result.original_eligible&np.isfinite(result.rollout_c)
-        result["one_step_residual_c"]=result.next_temperature_c-result.one_step_c
-        result["rollout_residual_c"]=result.next_temperature_c-result.rollout_c
-        return result
+    house_raw = {}
+    for month, filename in [("November", "10mins_solpap_2016.csv"),
+                            ("June", "10mins_solpap_2017.csv")]:
+        raw = pd.read_csv(ROOT / "data/tutorial_6_2" / filename, index_col=0)
+        raw.index = pd.to_datetime(raw.index, format="%d/%m/%Y %H:%M")
+        house_raw[month] = raw
 
-    house_predictions={};house_score_rows=[];house_segment_rows=[]
-    for name,table in house_tables.items():
-        predicted=predict_house_segments(table,house_coefficients)
-        house_predictions[name]=predicted
-        use=predicted.loc[predicted.common_score_mask].set_index("target_time")
-        for method,column in [("One-step","one_step_c"),("Segmented rollout","rollout_c")]:
-            house_score_rows.append({"period":name,"method":method,**temperature_metrics(use.next_temperature_c,use[column])})
-        for segment,group in predicted.loc[predicted.segment_id>=0].groupby("segment_id"):
-            house_segment_rows.append({"period":name,"segment_id":segment,"start":group.predictor_time.iloc[0],
-                "end":group.target_time.iloc[-1],"N_transitions":len(group),"duration_hours":len(group)/6})
-        export_table(predicted,f"house_{name.lower()}_predictions.csv")
-    house_scores=pd.DataFrame(house_score_rows);house_segments=pd.DataFrame(house_segment_rows)
-    display(house_scores);display(house_segments.groupby("period").agg(segments=("segment_id","size"),longest_hours=("duration_hours","max")))
-    export_table(house_scores,"house_scores.csv");export_table(house_segments,"house_rollout_segments.csv")
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8), sharex="col", sharey="row")
+    for col, (month, raw) in enumerate(house_raw.items()):
+        axes[0, col].plot(raw.index, raw["T_Average (degC)"], label="Indoor", color="black")
+        axes[0, col].plot(raw.index, raw["T_External (degC)"], label="Outdoor", color="0.5")
+        axes[0, col].set_title(month)
+        axes[0, col].legend()
+        axes[1, col].plot(raw.index, raw["P_tot (W)"] / 1000, color="tab:orange")
+        axes[2, col].plot(raw.index, raw["Solar (W/m2)"] / 1000, color="tab:green")
+        axes[2, col].set_xlabel("Observation time")
+        time_axis(axes[2, col])
+    axes[0, 0].set_ylabel("Temperature (°C)")
+    axes[1, 0].set_ylabel("Electricity + gas (kW)")
+    axes[2, 0].set_ylabel("Irradiance (kW/m²)")
+    save_figure(fig, "F62-12", ["data/tutorial_6_2/10mins_solpap_2016.csv",
+        "data/tutorial_6_2/10mins_solpap_2017.csv"], "November 2016; June 2017",
+        "°C;kW;kW/m²", "Raw measurements; gaps retained")
+    ''')
+    md('house-inspect',r'''
+    Compare heating power and irradiance between the two periods. Why might
+    coefficients fitted during the heating season predict summer temperatures
+    poorly? Which physical processes would a one-state model approximate?
+
+    Fill missing readings using linear interpolation within each fitting and
+    test period, as supplied below. We use these interpolated measurements
+    for this offline identification and prediction comparison.
+    ''')
+    md('house-math',r'''
+    ### 1R1C model with effective solar gains
+
+    We represent the building with indoor temperature $T$ and outdoor
+    temperature $T_o$, both in °C. Let $P$ be electricity-plus-gas power in kW
+    and $S$ be measured solar irradiance in kW/m². We approximate the heat
+    balance by
+
+    $$C_{\mathrm{eff}}\frac{dT}{dt}
+    =\frac{T_o-T}{R_{\mathrm{eff}}}+P+g_{\mathrm{eff}}S.$$
+
+    Here $R_{\mathrm{eff}}$ is in K/kW and $C_{\mathrm{eff}}$ is in kWh/K.
+    The effective solar-gain factor $g_{\mathrm{eff}}$ has units of m², so
+    $g_{\mathrm{eff}}S$ is a heat gain in kW. It combines the effects of window
+    area, transmission, orientation and shading relative to the measured
+    irradiance. Total energy consumption serves as a heat-input proxy; its
+    conversion to useful indoor heat is absorbed into the effective parameters.
+
+    With $\Delta t=1/6$ h, forward Euler gives
+
+    $$\Delta T_k=b(T_{o,k}-T_k)+cP_k+dS_k+\epsilon_k,$$
+
+    $$b=\frac{\Delta t}{R_{\mathrm{eff}}C_{\mathrm{eff}}},\qquad
+    c=\frac{\Delta t}{C_{\mathrm{eff}}},\qquad
+    d=\frac{\Delta t\,g_{\mathrm{eff}}}{C_{\mathrm{eff}}}.$$
+
+    The residual $\epsilon_k$ includes sensor error, unmeasured gains and
+    thermal dynamics omitted by the 1R1C approximation. We use the same three
+    predictors in each period:
+
+    $$x_k=[T_{o,k}-T_k,\ P_k,\ S_k],\qquad
+    y_k=T_{k+1}-T_k,\qquad \theta=[b,c,d]^T.$$
+
+    For $N$ complete transitions, $X$ has shape $(N,3)$ and $y$ has shape
+    $(N,)$. The model has its intercept fixed at zero. For each fitting period,
+    estimate $\theta$ by minimising $\|X\theta-y\|_2^2$ with the supplied bounds.
+    ''')
+    md('r1',r'''
+    ### Task R1. Prepare three predictors (10 min)
+
+    Complete `make_house_transitions(observations)`. Return a DataFrame with
+    measured `T`, `T_next`, target timestamps, `T_diff`, power `P_kW` and
+    irradiance `S_kW_m2`. Convert both power and irradiance from W to kW units.
+    Calculate `dT`, then drop the final row, whose next temperature is missing.
+
+    Check one row by hand: if $T_k=20$°C, $T_{k+1}=20.1$°C, $T_{o,k}=10$°C,
+    $P_k=2000$ W and $S_k=500$ W/m², the feature row is $[-10,2,0.5]$ and
+    its target is $0.1$ K. The supplied next cell calls your function separately
+    within November fit, June fit and June test observations.
+    ''')
+    task('R1','''
+    def make_house_transitions(observations):
+        T = observations["T_Average (degC)"]
+        table = pd.DataFrame({
+            "T": T,
+            "T_next": T.shift(-1),
+            "target_time": observations.index.to_series().shift(-1),
+            "T_diff": observations["T_External (degC)"] - T,
+            "P_kW": observations["P_tot (W)"] / 1000,
+            "S_kW_m2": observations["Solar (W/m2)"] / 1000,
+        })
+        table["dT"] = table["T_next"] - table["T"]
+        return table.dropna()
+    ''','''
+    def make_house_transitions(observations):
+        T = observations["T_Average (degC)"]
+        # TODO R1: fill T_diff, P_kW and S_kW_m2 in the feature table.
+        table = pd.DataFrame({
+            "T": T,
+            "T_next": T.shift(-1),
+            "target_time": observations.index.to_series().shift(-1),
+            "T_diff": np.nan,
+            "P_kW": np.nan,
+            "S_kW_m2": np.nan,
+        })
+        # TODO R1: add dT and return table.dropna() to remove the final row.
+        raise NotImplementedError("Task R1: return the 10-minute feature and target table.")
+    ''')
+    code('house-split','''
+    june_split = pd.Timestamp("2017-06-13")
+    # Fill each period separately with linear interpolation.
+    november_observations = house_raw["November"].interpolate(method="linear")
+    june_fit_observations = house_raw["June"].loc[house_raw["June"].index < june_split].interpolate(method="linear")
+    june_test_observations = house_raw["June"].loc[house_raw["June"].index >= june_split].interpolate(method="linear")
+
+    november_fit = make_house_transitions(november_observations)
+    june_fit = make_house_transitions(june_fit_observations)
+    june_test = make_house_transitions(june_test_observations)
+    house_features = ["T_diff", "P_kW", "S_kW_m2"]
+
+    house_periods = {"November fit": november_fit, "June fit": june_fit, "June test": june_test}
+    house_counts = pd.DataFrame([
+        {"period": name, "N_transitions": len(frame),
+         "first_predictor": frame.index.min(), "last_target": frame.target_time.max()}
+        for name, frame in house_periods.items()
+    ])
+    display(november_fit.head(3))
+    display(house_counts)
+    export_table(house_counts, "house_transition_counts.csv")
+    ''')
+    md('r2',r'''
+    ### Task R2. Fit November and June models (15 min)
+
+    Fit $b,c,d$ twice with `lsq_linear`: once using `november_fit`, then using
+    `june_fit`. Use `house_features` in the supplied order and `dT` as the
+    target. Store the results as `november_model` and `june_model`.
+    Check solver success and compare their coefficient arrays in the next cell.
+
+    The shared bounds are $b\in[10^{-6},0.2]$, $c\in[10^{-6},0.5]$ K/kW
+    and $d\in[0,2]$ K·m²/kW. They specify broad allowed ranges at the
+    10-minute step. The positive lower bounds on $b,c$ allow the following
+    parameter calculations; estimates at a bound require careful interpretation.
+
+    Recover the effective parameters using
+
+    $$R_{\mathrm{eff}}=\frac{c}{b},\qquad
+    C_{\mathrm{eff}}=\frac{\Delta t}{c},\qquad
+    \tau=\frac{\Delta t}{b},\qquad
+    g_{\mathrm{eff}}=\frac{d}{c}.$$
+
+    For example, $b=0.01$, $c=0.05$ K/kW and $d=0.1$ K·m²/kW give
+    $g_{\mathrm{eff}}=2$ m² and a solar heat gain of 1 kW at $S=0.5$ kW/m².
+    ''')
+    code('house-bounds','''
+    house_dt = 1 / 6
+    house_lower = np.array([1e-6, 1e-6, 0.0])
+    house_upper = np.array([0.2, 0.5, 2.0])
+    ''')
+    task('R2','''
+    november_model = lsq_linear(november_fit[house_features], november_fit["dT"],
+                                bounds=(house_lower, house_upper))
+    june_model = lsq_linear(june_fit[house_features], june_fit["dT"],
+                            bounds=(house_lower, house_upper))
+    if not november_model.success or not june_model.success:
+        raise RuntimeError("Inspect the least-squares solver messages.")
+    november_coefficients = november_model.x
+    june_coefficients = june_model.x
+    ''','''
+    # TODO R2: fit each training table with the same three predictors and bounds.
+    # Store november_model, june_model and their .x coefficient arrays as
+    # november_coefficients and june_coefficients.
+    raise NotImplementedError("Task R2: fit separate November and June coefficients.")
+    ''')
+    code('house-coefficients','''
+    coefficient_table = pd.DataFrame(
+        [november_coefficients, june_coefficients],
+        index=["November", "June"],
+        columns=["b", "c_K_per_kW", "d_K_m2_per_kW"])
+    parameter_rows = []
+    for month, model, n_fit in [("November", november_model, len(november_fit)),
+                               ("June", june_model, len(june_fit))]:
+        b_house, c_house, d_house = model.x
+        parameter_rows.append({
+            "fit_period": month, "N_fit": n_fit,
+            "R_eff_K_per_kW": c_house / b_house,
+            "C_eff_kWh_per_K": house_dt / c_house,
+            "tau_hours": house_dt / b_house,
+            "g_eff_m2": d_house / c_house,
+            "active_bounds": model.active_mask.tolist(),
+        })
+    house_parameters = pd.DataFrame(parameter_rows)
+    display(coefficient_table)
+    display(house_parameters)
+    export_table(coefficient_table, "house_seasonal_coefficients.csv", index=True)
+    export_table(house_parameters, "house_effective_parameters.csv")
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4.2))
+    for ax, column, units in zip(axes, coefficient_table.columns,
+                                ["dimensionless", "K/kW", "K·m²/kW"]):
+        ax.bar(coefficient_table.index, coefficient_table[column], color=["tab:blue", "tab:orange"])
+        ax.set(ylabel=units, title=column.split("_")[0])
+    save_figure(fig, "F62-11", ["data/tutorial_6_2/10mins_solpap_2016.csv",
+        "data/tutorial_6_2/10mins_solpap_2017.csv"], "November; first three days of June",
+        "dimensionless;K/kW;K·m²/kW", "Same model and coefficient bounds; linearly interpolated measurements")
+    ''')
+    md('house-coefficient-discussion',r'''
+    Which coefficients change most between the two fits? Compare the input
+    ranges in the raw plots and check `active_bounds` (−1 means lower bound,
+    0 means interior, +1 means upper bound). Explain how power, irradiance,
+    occupant behaviour and omitted thermal states can affect the estimates.
+
+    Both fits describe the same house using different observations. Each fit
+    approximates the measured temperature changes with three terms. Its
+    coefficients can absorb effects of omitted processes and correlated inputs.
+    A change in fitted $R_{\mathrm{eff}}$, $C_{\mathrm{eff}}$ or
+    $g_{\mathrm{eff}}$ alone is insufficient evidence of a change in the fabric
+    or window properties.
+    ''')
+    md('r3',r'''
+    ### Task R3. Compare transfer and refitting on June (15 min)
+
+    For every row in `june_test`, predict the next temperature twice:
+
+    $$\hat T_{k+1}^{\mathrm{Nov}}=T_k+x_k\hat\theta_{\mathrm{Nov}},\qquad
+    \hat T_{k+1}^{\mathrm{Jun}}=T_k+x_k\hat\theta_{\mathrm{Jun}}.$$
+
+    Complete the two prediction columns in `june_predictions`, then calculate
+    MAE, RMSE and bias with `temperature_metrics`. Keep the supplied
+    persistence prediction $\hat T_{k+1}=T_k$ as a reference. All three use
+    the same current temperature and the same 10-minute test targets.
+    The RC models also use recorded interval power and irradiance.
+
+    The November coefficients remain fixed during June evaluation. The June
+    model uses only 10–12 June for fitting; 13–14 June supplies the test targets.
+    Use `june_test` as the common index while calculating metrics. The supplied
+    plot places each prediction at its `target_time`.
+    ''')
+    task('R3','''
+    june_predictions = pd.DataFrame(index=june_test.index)
+    june_predictions["November transfer"] = june_test["T"] + june_test[house_features] @ november_coefficients
+    june_predictions["June refit"] = june_test["T"] + june_test[house_features] @ june_coefficients
+    june_predictions["Persistence"] = june_test["T"]
+    june_scores = pd.DataFrame([
+        {"model": name, **temperature_metrics(june_test["T_next"], prediction)}
+        for name, prediction in june_predictions.items()
+    ])
+    ''','''
+    june_predictions = pd.DataFrame(index=june_test.index)
+    # TODO R3: use T + X @ coefficients for each of the two fitted models.
+    june_predictions["November transfer"] = np.nan
+    june_predictions["June refit"] = np.nan
+    june_predictions["Persistence"] = june_test["T"]
+    # TODO R3: build june_scores with model, N, MAE_K, RMSE_K and bias_K.
+    raise NotImplementedError("Task R3: compare both models on the same June test targets.")
     ''')
     code('house-transfer-figure','''
-    fig,axes=plt.subplots(1,2,figsize=(12,5.5))
-    for ax,(name,raw) in zip(axes,house_raw.items()):
-        predicted=house_predictions[name]
-        ax.plot(raw.index,raw[HOUSE_COLUMNS[0]],color="black",label="Measured (original)")
-        ax.plot(predicted.target_time,predicted.one_step_c,color="tab:blue",alpha=.7,label="One-step (10 min)")
-        for number,(segment,group) in enumerate(predicted.loc[predicted.segment_id>=0].groupby("segment_id")):
-            ax.plot(group.target_time,group.rollout_c,color="tab:orange",label="Segmented rollout" if number==0 else None)
-        resets=predicted.loc[predicted.reset_at_predictor]
-        ax.scatter(resets.predictor_time,resets.indoor_temperature_c,marker="|",s=30,color="tab:orange",label="Explicit reset")
-        N=int(predicted.common_score_mask.sum());segments=int(predicted.reset_at_predictor.sum())
-        ax.set(title=f"{name}: N={N}; {segments} segments",ylabel="Indoor temperature (°C)",xlabel="Target / state time")
-        ax.set_xlim(raw.index[0],raw.index[-1])
-        legend_above(ax,2);ax.set_title(ax.get_title(),pad=50);time_axis(ax)
-    save_figure(fig,"F62-10",["data/tutorial_6_2/10mins_solpap_2016.csv","data/tutorial_6_2/10mins_solpap_2017.csv"],
-        "11–15 November 2016; 10–14 June 2017","°C;kW electricity+gas proxy;kW/m²",
-        "Frozen November coefficients; original-observation headline scores; no imputation",
-        counts="720 observations/period; common targets "+str(house_scores.groupby("period").N.first().to_dict()))
+    display(june_scores)
+    export_table(june_scores, "house_june_test_scores.csv")
+    june_record = june_test[["target_time", "T", "T_next"]].join(june_predictions)
+    export_table(june_record.rename_axis("predictor_time"), "house_june_test_predictions.csv", index=True)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 6), sharex=True)
+    axes[0].plot(june_test.target_time, june_test["T_next"], color="black", label="Measured")
+    for name, colour in [("November transfer", "tab:blue"), ("June refit", "tab:orange")]:
+        axes[0].plot(june_test.target_time, june_predictions[name], color=colour, alpha=.8, label=name)
+        axes[1].plot(june_test.target_time, june_test["T_next"] - june_predictions[name], color=colour, label=name)
+    axes[0].set(ylabel="Indoor temperature (°C)", title="June hold-out: 10-minute one-step predictions")
+    axes[0].legend(ncol=3)
+    axes[1].axhline(0, color="black", linewidth=1)
+    axes[1].set(ylabel="Measured − predicted (K)", xlabel="Target time")
+    axes[1].legend(ncol=2)
+    axes[1].xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 12]))
+    axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%d %b\\n%H:%M"))
+    save_figure(fig, "F62-10", ["data/tutorial_6_2/10mins_solpap_2016.csv",
+        "data/tutorial_6_2/10mins_solpap_2017.csv"], "13–14 June 2017",
+        "°C;K", "Fixed November fit versus June refit; interpolated June test measurements",
+        counts=f"{len(june_test)} common 10-minute targets per model")
     ''')
-    md('house-interpret','''
-    **Interpret:** the measured-state resets make these segmented rollouts shorter
-    experiments. Their scores are not five-day fixed-origin forecast scores.
-    Optional E1 links the segments by interpolating missing outdoor inputs; this
-    also removes resets and changes the prediction information set.
-    ''')
-    md('i8',r'''
-    ## I8. Three model roles and Week 7 handover (slides 29–31)
+    md('house-interpret',r'''
+    Use your computed coefficients, scores and residual plots to write four
+    sentences: identify one limitation of the heat-input proxy; describe one simplifying
+    model assumption; quantify one coefficient difference; and state how
+    transfer and refitting compare on the June test set.
 
-    1. **Student fit:** effective model estimated on the 21-day fit period and
-       checked on later observations and declared horizons.
-    2. **Common instructor model:** fixed shared coefficients for downstream
-       comparisons. The existing `verified_controller_model.json` was fitted on
-       all 28 synthetic days; its last seven days are not held out.
-    3. **Reference plant:** richer simulated response used to evaluate actions.
+    Does either fitted model improve on persistence? A 10-minute one-step
+    prediction starts from the latest indoor measurement, so small errors
+    alone provide limited evidence about longer simulations. Refitting can
+    improve performance when the new training period represents the test
+    conditions; the computed scores determine the outcome here.
 
-    For electrical input, $A=1-b$, $B=c\,COP$, $E=b$ with an explicit COP
-    assumption. Do not replace your fitted coefficients with the common model.
-    Preserve its JSON schema and fields. Model adequacy depends on the intended
-    horizon, margins and operating conditions, not a fit score alone.
+    The 1R1C model approximates the occupied house. Heat-input proxies,
+    measurement noise and omitted processes affect both parameter estimates
+    and prediction errors. Training-period sensitivity is therefore part of
+    the result. Name an additional measurement or model term that could help,
+    and specify a new period on which you would evaluate that revision.
+    ''')
+    md('conclusion',r'''
+    ## Conclusion
 
-    **Conclusion:** Estimated R and C depend on the data, estimation period and
-    model assumptions. Bounds enforce specified limits but do not establish unique
-    physical values. Accurate one-step predictions can coexist with substantial
-    rollout error. Evaluate later-period performance at the horizon required for
-    the intended use.
-    ''')
-    code('provenance','''
-    common_model=json.loads((ROOT/"data/reference_building/verified_controller_model.json").read_text())
-    display(pd.Series(common_model,name="Common instructor model (all 28 days)"))
-    provenance={"student_model":{"source":"data/reference_building/identification_data.csv",
-        "fit_start":str(fit_observations.index[0]),"fit_end":str(fit_observations.index[-1]),"N_fit_transitions":len(fit_transitions),
-        "validation_start":str(actual.index[0]),"validation_end":str(actual.index[-1]),"N_common_targets":len(actual),
-        "b":float(b),"c_K_per_kW":float(c),"dt_hours":dt,"validation_inputs":"recorded, ex-post conditional"},
-        "common_model":{"file":"data/reference_building/verified_controller_model.json","fit_provenance":"all 28 synthetic days; no independent seven-day holdout",
-                         "sha256":hashlib.sha256((ROOT/"data/reference_building/verified_controller_model.json").read_bytes()).hexdigest()},
-        "real_house":{"source":"https://discovery.ucl.ac.uk/id/eprint/10087216/","teaching_reference":"https://github.com/akylasstrat/BENV0092/blob/main/exercise_3_RC_model.ipynb",
-            "fit":"originally observed November transitions only","June":"frozen winter fit evaluated before post-hoc refit",
-            "heat_input":"electricity+gas power proxy, not delivered space heat","rollout":"explicit observed-input segments; no target-triggered reset"}}
-    if EXPORT_ARTEFACTS:(OUTPUT_DIR/"model_provenance.json").write_text(json.dumps(provenance,indent=2),encoding="utf8")
-    ''')
-    code('core-manifest','''
-    if EXPORT_ARTEFACTS:
-        pd.DataFrame(figure_manifest).sort_values("id").to_csv(ROOT/"teaching/week6_day2_figure_manifest.csv",index=False)
-    ''')
-    md('optional',r'''
-    ## Optional real-data extension E1–E4 (slides 33–36; 35–45 min)
-
-    The supplied transfer example above is complete without these exercises.
-    Use this section to investigate missingness, seasonal transfer and effective
-    parameter sensitivity. June is evaluated with the frozen winter fit **before**
-    its later descriptive refit. No optional estimate replaces the headline model.
-
-    ### E1. Inspect gaps and test limited interpolation
-
-    Retain the original values and masks. The observed outdoor gaps last at most
-    three 10-minute intervals. As an explicit sensitivity assumption, interpolate
-    only whole internal runs of at most three missing readings within each period.
-    Never fill endpoints, partly fill a longer run or overwrite observations.
-    This policy is not proof that the missing weather followed a linear path.
-    ''')
-    task('E1','''
-    short_filled={}
-    for name,raw in house_raw.items():
-        cleaned=raw[HOUSE_COLUMNS].copy()
-        for column in HOUSE_COLUMNS:
-            missing=cleaned[column].isna()
-            groups=missing.ne(missing.shift()).cumsum()
-            allowed=pd.Series(False,index=cleaned.index)
-            for _,run in cleaned.loc[missing,column].groupby(groups[missing]):
-                positions=cleaned.index.get_indexer(run.index)
-                if len(run)<=3 and positions[0]>0 and positions[-1]<len(cleaned)-1:
-                    allowed.loc[run.index]=True
-            candidate=cleaned[column].interpolate(method="time",limit_area="inside")
-            cleaned.loc[allowed,column]=candidate.loc[allowed]
-        short_filled[name]=cleaned
-    ''','''
-    # TODO E1: fill only complete internal runs of at most 3 readings, separately per period/column.
-    # Preserve house_raw and house_original_masks; create short_filled as a sensitivity copy.
-    raise NotImplementedError("Extension E1: limited internal gaps only, never endpoint extrapolation.")
-    ''',True)
-    code('gap-sensitivity','''
-    # Input-imputation sensitivity only: still score originally observed common targets.
-    gap_sensitivity_rows=[]
-    gap_sensitivity_predictions={}
-    for name,cleaned in short_filled.items():
-        sensitivity=house_tables[name].copy()
-        sensitivity["outdoor_temperature_c"]=cleaned[HOUSE_COLUMNS[1]].reindex(sensitivity.index)
-        # Keep original indoor temperatures/masks; only the missing outdoor forcing is filled here.
-        sensitivity["temperature_difference_c"]=sensitivity.outdoor_temperature_c-sensitivity.indoor_temperature_c
-        predicted=predict_house_segments(sensitivity,house_coefficients)
-        gap_sensitivity_predictions[name]=predicted
-        use=predicted.loc[house_predictions[name].common_score_mask].set_index("target_time")
-        gap_sensitivity_rows.append({"period":name,"method":"Limited outdoor-input imputation; frozen model",
-                                    "N_segments":int(predicted.reset_at_predictor.sum()),
-                                    **temperature_metrics(use.next_temperature_c,use.rollout_c)})
-        export_table(predicted,f"optional_{name.lower()}_input_gap_predictions.csv")
-    gap_sensitivity_scores=pd.DataFrame(gap_sensitivity_rows)
-    display(gap_sensitivity_scores);export_table(gap_sensitivity_scores,"optional_input_gap_sensitivity.csv")
-    fig,axes=plt.subplots(1,2,figsize=(12,5.5))
-    for ax,(name,predicted) in zip(axes,gap_sensitivity_predictions.items()):
-        raw=house_raw[name]
-        ax.plot(raw.index,raw[HOUSE_COLUMNS[0]],color="black",label="Measured (original)")
-        ax.plot(predicted.target_time,predicted.rollout_c,color="tab:orange",label="Continuous rollout; weather imputed")
-        ax.set(title=name,ylabel="Indoor temperature (°C)",xlabel="Target time",xlim=(raw.index[0],raw.index[-1]))
-        legend_above(ax,1);ax.set_title(name,pad=48);time_axis(ax)
-    fig.tight_layout()
-    if EXPORT_ARTEFACTS and (EXTRA_EXPORT_NAMES is None or "extra_house_input_gap_sensitivity" in EXTRA_EXPORT_NAMES):
-        for ext in ["png","svg"]:fig.savefig(FIGURE_DIR/f"extra_house_input_gap_sensitivity.{ext}",dpi=220,bbox_inches="tight")
-    plt.show();plt.close(fig)
-    ''')
-    md('gap-protocol-warning','''
-    These scores use the same originally observed targets as the headline example.
-    Interpolated temperature targets are never treated as truth. Filling the
-    forcing gaps also joins rollout segments and removes measured-state resets;
-    the change in error therefore reflects **both** the forcing assumption and
-    the initialisation protocol. It does not measure interpolation accuracy alone.
-    ''')
-    md('e2',r'''
-    ### E2. Reproduce the fixed November model and transfer check
-
-    Fit the three-predictor bounded model yourself using the original-observation
-    November rows. Compare with the supplied example, then evaluate June unchanged.
-    Explain what the proxy and omitted gains prevent you from claiming about R,C.
-    ''')
-    task('E2','''
-    extension_fit=lsq_linear(winter_transitions[HOUSE_FEATURES].to_numpy(),winter_transitions.temperature_change_c.to_numpy(),bounds=(HOUSE_LOWER,HOUSE_UPPER))
-    if not extension_fit.success:raise RuntimeError(extension_fit.message)
-    extension_coefficients=extension_fit.x
-    extension_june=predict_house_segments(house_tables["June"],extension_coefficients)
-    use=extension_june.loc[extension_june.common_score_mask].set_index("target_time")
-    extension_june_scores=temperature_metrics(use.next_temperature_c,use.rollout_c)
-    display(extension_june_scores)
-    ''','''
-    # TODO E2: fit original November transitions with the fixed bounds, then apply unchanged to June.
-    raise NotImplementedError("Extension E2: retain the winter fit for independent seasonal transfer.")
-    ''',True)
-    md('e3',r'''
-    ### E3. Descriptive fit-period sensitivity
-
-    After reporting the frozen-model June scores, compare full November, first
-    and final **clock-time** 48 h of November, and a post-hoc full June refit.
-    Both predictor and target must belong to each window. Do not take the first
-    288 already-filtered rows and call that 48 h. Complete the fit call and
-    parameter expressions in the supplied loop. The June row is in-sample,
-    post-hoc evidence, not an improved independent validation result.
-    ''')
-    code('sensitivity-windows','''
-    winter_start=house_raw["November"].index[0];winter_end=house_raw["November"].index[-1]
-    winter_table=house_tables["November"]
-    first48=winter_table.loc[(winter_table.predictor_time>=winter_start)&(winter_table.target_time<winter_start+pd.Timedelta(hours=48))]
-    final48=winter_table.loc[(winter_table.predictor_time>=winter_end-pd.Timedelta(hours=48)+pd.Timedelta(minutes=10))&(winter_table.target_time<=winter_end)]
-    sensitivity_windows={"Nov all":winter_table,"Nov first 48h":first48,"Nov final 48h":final48,"June post-hoc":house_tables["June"]}
-    ''')
-    task('E3','''
-    sensitivity_rows=[]
-    for name,table in sensitivity_windows.items():
-        valid=table.loc[table.original_eligible]
-        result=lsq_linear(valid[HOUSE_FEATURES].to_numpy(),valid.temperature_change_c.to_numpy(),bounds=(HOUSE_LOWER,HOUSE_UPPER))
-        if not result.success:raise RuntimeError(result.message)
-        loss,power,solar=result.x
-        sensitivity_rows.append({"window":name,"N_fit":len(valid),"start":valid.predictor_time.min(),"end":valid.target_time.max(),
-            "b":loss,"c_proxy":power,"g_proxy":solar,"R_proxy_K_per_kW":power/loss,
-            "C_proxy_kWh_per_K":(1/6)/power,"tau_hours":(1/6)/loss,"active_bounds":str(result.active_mask.tolist()),
-            "role":"post-hoc in-sample" if name=="June post-hoc" else "November fitting sensitivity"})
-    sensitivity_table=pd.DataFrame(sensitivity_rows)
-    ''','''
-    # TODO E3: fit each original-observation window and recover effective R,C,tau; retain counts/bounds.
-    raise NotImplementedError("Extension E3: label the June refit post-hoc and retain the original transfer result.")
-    ''',True)
-    code('sensitivity-figure','''
-    display(sensitivity_table);export_table(sensitivity_table,"optional_fit_period_sensitivity.csv")
-    fig,axes=plt.subplots(1,3,figsize=(12,5.5))
-    labels=["Nov\\nall","Nov\\nfirst\\n48 h","Nov\\nfinal\\n48 h","June refit\\n(post-hoc)"]
-    for ax,column,ylabel in zip(axes,["R_proxy_K_per_kW","C_proxy_kWh_per_K","tau_hours"],
-                              ["Effective R (K/kW)","Effective C (kWh/K)","Time constant (h)"]):
-        ax.bar(range(4),sensitivity_table[column],color=["tab:blue"]*3+["0.5"])
-        ax.set(xticks=range(4),xticklabels=labels,ylabel=ylabel)
-    save_figure(fig,"F62-11",["data/tutorial_6_2/10mins_solpap_2016.csv","data/tutorial_6_2/10mins_solpap_2017.csv"],
-        "Four documented clock-time fitting windows","K/kW;kWh/K;h","Original-observation fits; June post-hoc","Optional E3 fitting",
-        counts="N_fit by window: "+str(dict(zip(sensitivity_table.window,sensitivity_table.N_fit))))
-    # Rounded display only; all reported values come from these computed fits.
-    display(sensitivity_table.loc[sensitivity_table.window.ne("June post-hoc"),
-        ["window","N_fit","R_proxy_K_per_kW","C_proxy_kWh_per_K","tau_hours","active_bounds"]].round(3))
-    november_comparison=sensitivity_table.set_index("window")
-    for column,label in [("R_proxy_K_per_kW","R (K/kW)"),("C_proxy_kWh_per_K","C (kWh/K)"),("tau_hours","tau (h)")]:
-        values=november_comparison.loc[["Nov all","Nov first 48h","Nov final 48h"],column]
-        print(f"{label}: full {values.iloc[0]:.3f}; first 48 h {values.iloc[1]:.3f}; final 48 h {values.iloc[2]:.3f}.")
-    ''')
-    md('sensitivity-interpret','''
-    **Interpret F62-11:** compare the computed full, first and final November
-    estimates of R,C and tau, together with sample counts and active bounds.
-    Parameter sensitivity need not be equally large for every parameter. Input
-    variation, correlations, unmodelled gains and noise differ across estimation
-    periods; finite-data estimates under a heat proxy need not be unique fabric
-    properties. Their variation alone does not demonstrate changing building fabric.
-    The four fits support no significance or confidence claims. The grey
-    **June refit (post-hoc)** follows frozen-model June evaluation and never
-    replaces its coefficients or scores. This optional evidence adds no core dependency.
-    ''')
-    md('e4',r'''
-    ### E4. Evidence and possible model changes
-
-    Use the newly computed table; do not repeat earlier rounded estimates.
-    Which window changes the effective parameters most? Did any bound activate?
-    Why need these differences not imply changing building fabric? Compare
-    observed-input segmented rollouts with E1's labelled forcing-imputation
-    sensitivity. What can indoor/outdoor sensors, delivered heating and solar
-    measurements add? Propose one intercept/gain/state extension and the new
-    final evaluation data needed to judge it. No advanced estimator is required.
+    A 1R1C model represents an occupied house with a simplified heat balance
+    and an approximate heat-input signal. Its fitted coefficients summarise the selected
+    observations under these assumptions. Comparing November and
+    June exposes their sensitivity to the training data. Evaluate transfer
+    and refitting on shared held-out targets, and interpret the effective
+    parameters together with the prediction errors and model assumptions.
     ''')
     code('manifest','''
     if EXPORT_ARTEFACTS:
         pd.DataFrame(figure_manifest).sort_values("id").to_csv(ROOT/"teaching/week6_day2_figure_manifest.csv",index=False)
     ''')
     md('references','''
-    ### References and source credits (slide 32)
+    ### References and source credits
 
     - Synthetic data assumptions: [reference data README](data/reference_building/README.md).
-    - Real data: [Hollick and Wingfield (2018), UCL dataset](https://discovery.ucl.ac.uk/id/eprint/10087216/),
+    - House measurements: [Hollick and Wingfield (2018), UCL dataset](https://discovery.ucl.ac.uk/id/eprint/10087216/),
       DOI 10.14324/000.ds.10087216; [local data README](data/tutorial_6_2/README.md).
-    - Teaching reference: [BENV0092 Exercise 3](https://github.com/akylasstrat/BENV0092/blob/main/exercise_3_RC_model.ipynb).
-      The present workflow preserves original masks and evaluates winter-to-summer transfer before refitting June.
+    - Teaching reference: [BENV0092 Exercise 3 solution](https://github.com/akylasstrat/BENV0092/blob/main/exercise_3_RC_model_solution.ipynb).
+      I7 uses its three-predictor formulation with explicit units and a shared June hold-out.
     - [SciPy 1.15.3 lsq_linear](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.optimize.lsq_linear.html).
     - Bacher and Madsen (2011), Energy and Buildings 43, 1511–1522;
       Drgoňa et al. (2020), Annual Reviews in Control 50, 190–232.
@@ -971,4 +882,4 @@ if __name__=='__main__':
         for slide,minutes in enumerate(SLIDE_MINUTES,1):
             block=next(i for i,(first,last) in enumerate(TEACHING_BLOCKS,1) if first<=slide<=last)
             writer.writerow([slide,minutes,block])
-    print('Built Tutorial 6.2 pair only; six core tasks and three optional coding exercises.')
+    print('Built Tutorial 6.2 pair only; Tasks A–E and main real-house Tasks R1–R3.')

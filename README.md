@@ -29,7 +29,7 @@ Both notebooks are self-contained and use the existing environment. Worked noteb
 ## Week 6
 
 - [Tutorial 6.1: Control-oriented building modelling and simulation](tutorial_6_1_control_oriented_building_model.ipynb): explore thermal dynamics and compare a compact building model with a reference plant.
-- [Tutorial 6.2: RC model identification and validation](tutorial_6_2_rc_model_identification.ipynb): fit and validate a thermal model using synthetic and measured data.
+- [Tutorial 6.2: RC model identification and validation](tutorial_6_2_rc_model_identification.ipynb): fit and validate a thermal model, estimate effective solar gains, and compare November-to-June transfer with a June refit using house measurements.
 
 Run both notebooks from the repository root. The required inputs are in `data/reference_building` and `data/tutorial_6_2`; the worked solutions are released separately.
 
