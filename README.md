@@ -43,10 +43,11 @@ Run from the repository root using the supplied environment and inputs in `data/
 ## Week 8
 
 - [Tutorial 8.1: Model predictive control](tutorial_8_1_model_predictive_control.ipynb): build a heating MPC controller, follow repeated measurement and optimisation steps, and compare MPC with a fixed plan and a thermostat. Optional activities cover temperature tracking, PV and battery storage, and a shrinking horizon. [Worked solution](tutorial_8_1_model_predictive_control_solution.ipynb).
+- [Tutorial 8.2: How errors affect building MPC](tutorial_8_2_mpc_uncertainty_evaluation.ipynb): compare MPC with a fixed plan under forecast noise and bias, model mismatch, sensor errors and physical disturbances. A stochastic MPC extension reuses Week 4 scenario generation and evaluates operating-cost distributions over independent weather realisations. [Worked solution](tutorial_8_2_mpc_uncertainty_evaluation_solution.ipynb).
 
-The offline HTML companions, the two-interval heating optimiser and MPC step-through player, are provided separately through Moodle. Download the files from Moodle and open them in a browser.
+The offline HTML companions are provided separately through Moodle: the two-interval heating optimiser and MPC step-through player for Tutorial 8.1, and the forecast noise and bias explorer for Tutorial 8.2. Download the files from Moodle and open them in a browser.
 
-Run the notebooks from the repository root using the supplied environment and inputs in `data/reference_building`. Keep the supplied `course_utils` and `scripts` folders with the notebooks. The student version retains Tasks A–F; the worked solution includes completed code and results.
+Run the notebooks from the repository root using the supplied environment and inputs in `data/reference_building`. Keep the supplied `course_utils` and `scripts` folders with the notebooks. Both student versions retain Tasks A–F; Tutorial 8.2 adds Tasks G–H in its 40-minute stochastic MPC extension. Worked solutions include completed code and results.
 
 ## Generated files
 
