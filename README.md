@@ -43,13 +43,14 @@ Run from the repository root using the supplied environment and inputs in `data/
 ## Week 8
 
 - [Tutorial 8.1: Model predictive control](tutorial_8_1_model_predictive_control.ipynb): build a heating MPC controller, follow repeated measurement and optimisation steps, and compare MPC with a fixed plan and a thermostat. Optional activities cover temperature tracking, PV and battery storage, and a shrinking horizon. [Worked solution](tutorial_8_1_model_predictive_control_solution.ipynb).
-- Offline interactive tools: [two-interval heating optimiser](teaching/tutorial_8_1_two_interval_heating.html) and [MPC step-through player](teaching/tutorial_8_1_mpc_player.html). Download the HTML files and open them in a browser.
+
+The offline HTML companions, the two-interval heating optimiser and MPC step-through player, are provided separately through Moodle. Download the files from Moodle and open them in a browser.
 
 Run the notebooks from the repository root using the supplied environment and inputs in `data/reference_building`. Keep the supplied `course_utils` and `scripts` folders with the notebooks. The student version retains Tasks A–F; the worked solution includes completed code and results.
 
 ## Generated files
 
-Saved lecture plots, forecast tables, checkpoints, manifests, validation reports and teaching archives are local artifacts excluded from Git. Required input datasets, provenance, notebook illustrations, Tutorial 8.1 HTML companions and source scripts are versioned. Running a notebook may regenerate outputs; set `EXPORT_ARTEFACTS = False` where available to display results without exporting them.
+Saved lecture plots, forecast tables, checkpoints, manifests, validation reports and teaching archives are local artifacts excluded from Git. Required input datasets, provenance, notebook illustrations and source scripts are versioned. Running a notebook may regenerate outputs; set `EXPORT_ARTEFACTS = False` where available to display results without exporting them.
 
 ## Set-up
 

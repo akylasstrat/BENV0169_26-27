@@ -567,7 +567,7 @@ display(forecast_alignment.iloc[[0,1,47]])""")
     Parameters and solve it again. The coefficients $b,c$, COP, actuator capacity,
     $N$ and $\gamma$ stay fixed.
 
-    Use the [two-interval heating optimiser](teaching/tutorial_8_1_two_interval_heating.html)
+    Use the **two-interval heating optimiser** supplied on Moodle
     to explore the feasible set, comfort shortfalls and objective before coding.
     Open the downloaded HTML file in a browser; it works offline.
 
@@ -706,7 +706,7 @@ save_figure(fig,'F81-01')""")
     md('guided-trace-text', r'''
     ### Follow two MPC updates (slide 23)
 
-    The [MPC step-through player](teaching/tutorial_8_1_mpc_player.html) lets you
+    The **MPC step-through player** supplied on Moodle lets you
     reveal a plan, apply its first action and inspect the returned observation.
     Open the downloaded HTML file in a browser; it works offline.
 

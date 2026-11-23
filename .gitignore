@@ -19,8 +19,6 @@ env/
 
 # Notebook exports and temporary files
 *.html
-!/teaching/tutorial_8_1_two_interval_heating.html
-!/teaching/tutorial_8_1_mpc_player.html
 *.nbconvert.ipynb
 *.tmp
 ~$*
